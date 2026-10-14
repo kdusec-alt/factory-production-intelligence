@@ -7,6 +7,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <title>Factory Production Intelligence | 產效智能管理</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="data/factory-data.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -22,12 +23,12 @@
         <button class="nav-link" data-view="quality"><span>◇</span><span data-i18n="quality">品質與幹部</span></button>
         <button class="nav-link" data-view="audit"><span>☷</span><span data-i18n="audit">資料檢核</span></button>
       </nav>
-      <div class="side-bottom"><div class="privacy-icon">◈</div><strong data-i18n="localProcessing">本機安全分析</strong><p data-i18n="localNote">Excel僅在瀏覽器內處理，不會上傳伺服器。</p><span class="version">GITHUB PAGES · V1.0</span></div>
+      <div class="side-bottom"><div class="privacy-icon">◈</div><strong data-i18n="localProcessing">本機安全分析</strong><p data-i18n="localNote">Excel僅在瀏覽器內處理，不會上傳伺服器。</p><span class="version">GITHUB PAGES · V1.2</span></div>
     </aside>
     <main class="main">
       <header class="topbar"><div class="breadcrumbs">OPERATIONS <span>/</span> <span id="crumb">PRODUCTION DASHBOARD</span></div><div class="top-actions"><span class="status-dot"></span><span class="top-status" data-i18n="offline">LOCAL ANALYTICS</span><button id="langBtn" class="outline small">Tiếng Việt</button></div></header>
       <div class="page">
-        <div class="headline"><div><div class="eyebrow" data-i18n="eyebrow">OPERATIONAL PERFORMANCE CENTER</div><h1 id="pageTitle" data-i18n="overviewTitle">產效智能管理儀表板</h1><p class="lead" id="pageSubtitle" data-i18n="overviewSub">8H正常班、OT、HC與品質的整合分析，協助管理每日產出及生產穩定性。</p></div><div class="headline-actions"><button id="demoBtn" class="outline" data-i18n="demo">載入示範資料</button><label class="primary upload-label" for="fileInput"><span>↑</span><span data-i18n="upload">匯入Excel</span></label><input id="fileInput" type="file" accept=".xlsx,.csv" multiple hidden /></div></div>
+        <div class="headline"><div><div class="eyebrow" data-i18n="eyebrow">OPERATIONAL PERFORMANCE CENTER</div><h1 id="pageTitle" data-i18n="overviewTitle">產效智能管理儀表板</h1><p class="lead" id="pageSubtitle" data-i18n="overviewSub">8H正常班、OT、HC與品質的整合分析，協助管理每日產出及生產穩定性。</p></div><div class="headline-actions"><button id="demoBtn" class="outline" data-i18n="demo">重新載入資料</button><button id="downloadVN" class="outline" data-i18n="downloadVN">下載越文Excel</button><label class="primary upload-label" for="fileInput"><span>↑</span><span data-i18n="upload">匯入Excel</span></label><input id="fileInput" type="file" accept=".xlsx,.csv" multiple hidden /></div></div>
         <div class="import-strip"><div class="file-state"><span class="file-icon">▣</span><div><strong id="sourceTitle">尚未匯入資料</strong><small id="sourceDetail">支援 Master_Daily / Model_Data / Quality_Issues / Sheet2</small></div></div><div class="file-state-right"><span id="datasetTag" class="tag muted">NO DATA</span><button class="text-button" id="clearBtn" data-i18n="clear">清除資料</button></div></div>
         <div id="message" class="message hidden" role="status"></div>
         <section id="filters" class="filter-bar"><div class="filter-title"><strong data-i18n="period">比較期間</strong><span data-i18n="weighted">使用8H正常班與加權人時產出</span></div><div class="date-field"><label for="baseStart" data-i18n="baselineStart">基準開始</label><input id="baseStart" type="date"></div><div class="date-field"><label for="baseEnd" data-i18n="baselineEnd">基準結束</label><input id="baseEnd" type="date"></div><div class="arrow">→</div><div class="date-field"><label for="compStart" data-i18n="compareStart">比較開始</label><input id="compStart" type="date"></div><div class="date-field"><label for="compEnd" data-i18n="compareEnd">比較結束</label><input id="compEnd" type="date"></div></section>
