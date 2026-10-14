@@ -1,31 +1,43 @@
-# Factory Production Intelligence — GitHub Pages V1.2
+# Factory Production Intelligence — V1.3 (Direct Entry)
 
-**繁體中文 / Tiếng Việt** · Preloaded production data (2026-10-13) · Local Excel import supported.
+**繁體中文 / Tiếng Việt** · GitHub Pages · Browser-side IndexedDB records · No Excel required for daily work.
 
-## Start / Bắt đầu
+## Live site
 
-- Chinese: `https://kdusec-alt.github.io/factory-production-intelligence/`
-- Vietnamese: `https://kdusec-alt.github.io/factory-production-intelligence/?lang=vn`
-- The dashboard automatically loads the committed data: **36 production days, 108 model records, 28 September quality issues**.
-- Use **Tải lại dữ liệu trên web** to reset the view to the published dataset, or **Nhập Excel** to merge more recent records in the browser.
-- **Tải Excel tiếng Việt** downloads `data/Factory_Production_Intelligence_Vietnamese_2026-10-13.xlsx`.
-- The spreadsheet includes `Master_Daily`, `Model_Data`, `Quality_Issues`, `So_sanh`, `Huong_dan` and formulas for the 8H efficiency comparison.
+- Traditional Chinese: https://kdusec-alt.github.io/factory-production-intelligence/
+- Vietnamese: https://kdusec-alt.github.io/factory-production-intelligence/?lang=vn
 
-## Data and privacy
+## What's new in V1.3
 
-**Important:** This repository and GitHub Pages are public. The committed workbook and bundled dataset include actual production figures, quality findings, and staff names. They can be downloaded by anyone with access to the public URL. The owner explicitly requested uploading this data.
+- **每日登錄 / Nhập dữ liệu**: enter date, daily completed Stockfit/GCĐ and Assembly/TH output, normal HC, OT output/HC, normal/OT hours and notes directly on the site.
+- **型體明細 / Chi tiết mã giày**: enter or edit each date/model's Stockfit and Assembly totals and OT pairs. No model-level HC is invented.
+- **品質改善追蹤 / Theo dõi chất lượng**: enter issue, model, affected pairs, responsible/senior cadre, corrective action, status and due date.
+- **Browser-local persistence**: records saved in IndexedDB and loaded when the same browser returns to the site. No Excel needed for new records.
+- **Edit/delete**, change history and undo, **JSON backup/restore** for transferring data to another browser or recovering from cleared storage.
+- Existing dashboards, daily trends, HC planning, model comparisons and data audit immediately use newly saved records.
+- Initial database seeded from previously published 36 production days, 108 model records and 28 September quality issues.
+- Legacy Excel import remains available as an optional migration tool; it is not required for daily use.
 
-Manual Excel imports are processed in the browser and are **not** automatically committed to GitHub. There is no login, team database, or MES synchronization. Future updates to the published dataset require a new commit.
+## IMPORTANT: Storage architecture
 
-## Metric rules
+This is a **single-browser** data-entry application. GitHub Pages does not provide a database, server authentication or automatic synchronization. **A record saved on computer A will not appear on computer B**. If you clear browser site data, switch browser profiles, use incognito mode, or change device, data may be lost unless you have exported and restored a JSON backup.
 
-- 8H final output = total daily final output − OT final output.
-- Weighted pairs/man-hour = SUM(8H output) / SUM(HC × normal hours).
-- GCĐ/Stockfit and TH/Assembly are sequential processes; do not sum their pairs.
-- Sabrina 4 double-pass flow can shift final output between 8H and OT; output efficiency is not the actual process-cycle efficiency.
-- October OT recorded as zero with blank OT headcount must be confirmed before concluding no overtime occurred.
-- Quality allocation MK 532 / TH 231 must not be counted entirely against Assembly.
+For team-wide entry, access control, reliable centralized storage, auditability and backup, the next step is to add an authenticated backend database (e.g., Supabase/Postgres, Firebase, or a hosted server). Never embed admin API keys in a public GitHub Pages app. The V1.3 app does **not** upload manually entered records to GitHub or any cloud database.
 
-## Vietnamese notes / Ghi chú tiếng Việt
+## Existing public data
 
-Số liệu được tải sẵn đến ngày 13/10/2026. Chọn **Tiếng Việt** hoặc mở đường dẫn `?lang=vn` để sử dụng giao diện tiếng Việt. Khi cập nhật dữ liệu mới, hãy nhập Excel trên trình duyệt. Dữ liệu được công khai trong GitHub Pages, không có chức năng phân quyền người dùng.
+The repo is public and still includes the historical Excel workbook and bundled historical production/quality data from V1.2, as explicitly requested by the owner. These files are publicly accessible. Manually entered V1.3 data is not published to the repo.
+
+## Calculations and cautions
+
+- 8H final output = total daily completed output − OT completed output. Missing OT must remain `null`/blank, not silently become zero.
+- Weighted pairs/man-hour = SUM(8H final output) / SUM(normal HC × normal hours), by Stockfit and Assembly **separately**.
+- Stockfit and Assembly are sequential processes; do not add their output as if they were distinct finished pairs.
+- Sabrina 4's two-pass Stockfit means completed output can be recognized later than process work; the dashboard measures final-output productivity, not true operation-cycle efficiency.
+- For October data where OT was recorded as zero but OT HC blank, confirm actual OT status before concluding overtime was eliminated.
+- HC planning is a linear scenario, **not** a promise that adding workers increases output proportionally.
+- Historical quality issues with no recorded event date remain undated. No date is invented when editing them.
+
+## Backup workflow
+
+Open **每日登錄 → 資料備份與紀錄** (VN: **Nhập dữ liệu → Sao lưu và lịch sử**) and click **下載完整JSON備份**. Save the JSON in a secure location. Use **還原JSON備份** to restore on another browser; this replaces that browser's current data. Export at least once per workday until a centralized database is implemented.
