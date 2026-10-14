@@ -1,25 +1,21 @@
-# Factory Production Intelligence — V1.4 (IE + Dynamic Models)
+# Factory Production Intelligence — V1.5 (Two-day comparison + GitHub sync)
 
-Traditional Chinese / Tiếng Việt. Static GitHub Pages website with browser-local IndexedDB (no server database).
+## What changed
 
-## New in V1.4
+- **A day vs B day**: only two date fields, default to the two latest actual production dates. KPI cards, comparison table, model mix, IE estimate and HC planner explicitly show the selected dates. Daily trend view still shows complete history.
+- **Cloud sync**: opt-in GitHub Contents API using a fine-grained personal access token provided at runtime (in memory only). Data stored at `data/live-snapshot.json` on a separate `production-records` branch, so normal data writes do not rebuild GitHub Pages.
+- After connecting, the user must **explicitly push or pull once**; subsequent local changes auto-sync while the tab is open if enabled. Concurrent remote changes are detected by SHA and rejected, rather than silently overwritten.
+- The token is never stored in IndexedDB, localStorage, source code, or the repository. On page reload the user must reconnect. Local IndexedDB continues to work offline; export JSON backup is still available.
+- Repo is **public**; all GitHub-synced production and quality data in `production-records` branch is also publicly readable. The user explicitly approved uploading these data in earlier turns.
+- GitHub is acceptable for a single-user low-frequency dataset but is not a replacement for a transactional multi-user database.
 
-- **IE standard management** (每日登錄 → IE 標準設定 / Nhập dữ liệu → Tiêu chuẩn IE): create new model codes, add optional model name and IE effective-date versions, edit and delete IE standards independently of production records.
-- Set **Stockfit (GCĐ)** and **Assembly (TH)** IE standard labor content **SAM in labor-minutes/pair**, line **Cycle Time in seconds/pair**, optional dedicated planned HC and target efficiency separately.
-- Live 8-hour (configurable hours) IE planning: **SAM-based labor pacing** = SAM × 60 ÷ (dedicated HC × target efficiency fraction); **planned output interval** = max(SAM-based pacing, provided IE cycle seconds); **expected pairs** = floor(hours × 3600 ÷ planned interval). A missing input is not guessed.
-- **Model comparison** includes dynamic models and current IE values, with comparison-period model mix, SAM labor-hours and model-mix required HC **only when all relevant IE SAM, target efficiency, normal output, and model reconciliation are complete**.
-- **IE versioning**: optional effective date. Blank means valid from the beginning; historical comparison uses the IE version effective on each production date. Changes to current standards do not automatically rewrite older effective-date versions.
-- Existing daily entry, model output entry, quality follow-up, trends, local data persistence and JSON backup remain.
-- **Backups** now include IE standards. V1.3 JSON backups are accepted for migration. The IndexedDB database name is unchanged to retain local V1.3 records.
+## Set up sync
 
-## IE measurement caveats
+1. Create a GitHub fine-grained personal access token for repository `kdusec-alt/factory-production-intelligence`, with **Contents: Read and write** and no other permissions.
+2. Open **每日登錄 → 資料備份與紀錄 → GitHub 雲端資料同步** and enter the token.
+3. Click Connect, then Push (to make the local state authoritative) or Pull (to replace local data from an existing cloud snapshot).
+4. When auto-sync is enabled, later saves trigger a background GitHub commit after a short delay. Confirm the cloud status; local saves are not the same as remote sync.
 
-**SAM** is the sum of standard human labor minutes required per pair, NOT elapsed time through Stockfit or Assembly. **Cycle Time** is the line's planned completion interval (seconds per pair), NOT the total production lead time. If both constraints are known, the slower (larger) interval limits throughput. Dedicated HC/target efficiency must be entered for SAM-based throughput; if only cycle time is known, cycle-only theoretical throughput is displayed and not described as labor-feasible. Missing IE standards are not estimated from historical output. No invented IE values are seeded.
+GitHub API content-file sync is limited to approximately 750 KB in this version to avoid the API's large-file handling restrictions.
 
-Sabrina 4 Stockfit has two passes. Model-level completed output and standard time do not prove actual process lead time or true labor utilization. Model-mix HC planning requires complete model allocation and standards, and assumes standard labor content and efficiencies apply to the recorded mix; quality losses and WIP may reduce feasible output.
-
-## Data persistence / privacy
-
-New entries are stored in **this browser's IndexedDB only**. GitHub Pages has no multi-user synchronization. Export JSON backups regularly. This public repository already includes historical factory data explicitly uploaded by its owner; new manual IE and daily records are not automatically uploaded to GitHub.
-
-Open: https://kdusec-alt.github.io/factory-production-intelligence/ (VN: add `?lang=vn`).
+The code never guesses missing OT values, model IE standards, or WIP/quality causes.

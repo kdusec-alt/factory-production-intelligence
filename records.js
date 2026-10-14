@@ -55,9 +55,11 @@ async function persist(action,before=null){
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Database write failed'));tx.onabort=()=>reject(tx.error||new Error('Database write aborted'));
  });
  revisions=(await getRevisions()).slice(-30).reverse();
+ window.dispatchEvent(new CustomEvent('factory:local-saved',{detail:{savedAt:now,action}}));
  $('dbStatus').textContent=tr('已儲存於此瀏覽器','Đã lưu trên trình duyệt này')+' · '+new Date(now).toLocaleString(state.lang==='zh'?'zh-TW':'vi-VN')+' · '+state.daily.length+' '+tr('生產日','ngày sản xuất');
 }
 window.commitFactoryMutation=commit;
+window.restoreFactoryCloudSnapshot=async(snapshot)=>{const before=allState();try{applyState(snapshot);setDefaultPeriods();await persist('Restore GitHub cloud snapshot',before);render();}catch(e){applyState(before);render();throw e;}};
 window.persistFactoryState=async(action='External import',before=null)=>{
  try{await persist(action,before);render();}catch(e){showMessage(tr('本機儲存失敗：','Lưu trên thiết bị thất bại: ')+e.message,true);throw e;}
 };
