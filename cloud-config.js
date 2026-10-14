@@ -1,4 +1,4 @@
-/* Public endpoint only. Never put STAFF_LINK_SECRET, ADMIN_LINK_SECRET, GitHub tokens, or service-role keys here. */
+/* Public API endpoint only. Access keys are in private URL fragments, not this file. */
 window.FACTORY_CLOUD_CONFIG = Object.freeze({
-  endpoint: '' // Set after Supabase Edge Function deployment, e.g. https://PROJECT.supabase.co/functions/v1/factory-api
+  endpoint: 'https://tzhoswjxoyoctqezlacp.supabase.co/functions/v1/factory-api'
 });
