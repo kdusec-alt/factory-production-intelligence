@@ -1,7 +1,7 @@
 /**
  * Factory Production Intelligence V1.6 Supabase Edge Function.
  * Deploy with JWT verification DISABLED; authorization is via strong private staff/admin URL-fragment keys.
- * Set STAFF_LINK_SECRET and ADMIN_LINK_SECRET in Supabase Edge Function secrets, never in GitHub.
+ * Only SHA-256 hashes are stored in an RLS-protected credential table; no plaintext keys in public files.
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
@@ -19,11 +19,9 @@ const send=(status:number,obj:unknown,origin:string|null)=>new Response(JSON.str
 const isInt=(n:unknown,min:number,max:number)=>Number.isInteger(n)&&Number(n)>=min&&Number(n)<=max;
 const isNum=(n:unknown,min:number,max:number)=>typeof n==='number'&&Number.isFinite(n)&&n>=min&&n<=max;
 const validDate=(v:unknown)=>typeof v==='string'&&/^20\d\d-\d\d-\d\d$/.test(v)&&!Number.isNaN(Date.parse(v+'T00:00:00Z'))&&new Date(v+'T00:00:00Z').toISOString().slice(0,10)===v;
-async function equalSecret(provided:string,expected:string):Promise<boolean>{
- if(provided.length<32||expected.length<32||provided.length>256)return false;
- const enc=new TextEncoder();
- const [a,b]=await Promise.all([crypto.subtle.digest('SHA-256',enc.encode(provided)),crypto.subtle.digest('SHA-256',enc.encode(expected))]);
- const aa=new Uint8Array(a),bb=new Uint8Array(b);let diff=0;for(let i=0;i<aa.length;i++)diff|=aa[i]^bb[i];return diff===0;
+async function hashKey(value:string):Promise<string>{
+ const bytes=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)));
+ return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 function validate(raw:unknown):Record<string,unknown>{
  if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('Invalid report');
@@ -59,22 +57,37 @@ Deno.serve(async (request:Request)=>{
  if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors(origin)});
  if(request.method!=='POST')return send(405,{error:'Method not allowed'},origin);
  if(origin&&origin!==allowedOrigin)return send(403,{error:'Origin not allowed'},origin);
- const staffSecret=Deno.env.get('STAFF_LINK_SECRET')||'';
- const adminSecret=Deno.env.get('ADMIN_LINK_SECRET')||'';
- const isStaff=await equalSecret(request.headers.get('x-staff-key')||'',staffSecret);
- const isAdmin=await equalSecret(request.headers.get('x-admin-key')||'',adminSecret);
+ const url=Deno.env.get('SUPABASE_URL')||'';
+ const legacyKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
+ let key=legacyKey;
+ if(!key){
+  try{const keys=JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}');key=keys.default||Object.values(keys)[0]||'';}
+  catch{key='';}
+ }
+ if(!url||!key)return send(503,{error:'Database is not configured'},origin);
+ const supabase=createClient(url,String(key),{auth:{persistSession:false,autoRefreshToken:false}});
+ const staffToken=request.headers.get('x-staff-key')||'';
+ const adminToken=request.headers.get('x-admin-key')||'';
+ const provided=adminToken||staffToken;
+ if(provided.length<32||provided.length>256)return send(401,{error:'Invalid staff/manager link'},origin);
+ const digest=await hashKey(provided);
+ const {data:credential,error:authError}=await supabase.from('factory_link_credentials')
+   .select('role').eq('key_hash',digest).eq('active',true).maybeSingle();
+ if(authError){console.error('Auth lookup error',authError.code);return send(503,{error:'Authentication is unavailable'},origin);}
+ const isAdmin=Boolean(adminToken)&&credential?.role==='admin';
+ const isStaff=Boolean(staffToken)&&credential?.role==='staff';
  if(!isStaff&&!isAdmin)return send(401,{error:'Invalid staff/manager link'},origin);
  const size=Number(request.headers.get('content-length')||'0');
  if(size>32_000)return send(413,{error:'Request too large'},origin);
  let body:Record<string,unknown>;
- try{body=await request.json();if(!body||typeof body!=='object'||Array.isArray(body))throw new Error();}
- catch{return send(400,{error:'Invalid JSON'},origin);}
+ try{
+  const raw=await request.text();
+  if(raw.length>32_000)return send(413,{error:'Request too large'},origin);
+  body=JSON.parse(raw);
+  if(!body||typeof body!=='object'||Array.isArray(body))throw new Error();
+ }catch{return send(400,{error:'Invalid JSON'},origin);}
  const action=body.action;
  if(action==='health')return send(200,{ok:true,role:isAdmin?'admin':'staff'},origin);
- const url=Deno.env.get('SUPABASE_URL')||'';
- const key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
- if(!url||!key)return send(503,{error:'Database is not configured'},origin);
- const supabase=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
  if(action==='save'){
   if(!isStaff&&!isAdmin)return send(403,{error:'Write not permitted'},origin);
   let record:Record<string,unknown>;
