@@ -1,0 +1,2 @@
+[functions.factory-api]
+verify_jwt = false

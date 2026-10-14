@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <title>Nhập báo cáo sản xuất · Factory Intelligence</title>
+  <link rel="stylesheet" href="staff.css">
+  <script src="cloud-config.js" defer></script>
+  <script src="staff.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div class="logo">F<span>·</span></div><div class="brand"><strong>FACTORY INTELLIGENCE</strong><small>DAILY PRODUCTION REPORT</small></div><button type="button" id="lang" class="lang">中文</button></header>
+    <section class="hero"><div class="eyebrow" data-t="tag">BÁO CÁO SẢN XUẤT</div><h1 data-t="title">Nhập số liệu hằng ngày</h1><p data-t="subtitle">Chọn chuyền, nhập sản lượng và nhân lực, sau đó nhấn Lưu. Không cần Excel hay GitHub.</p></section>
+    <div id="status" class="status pending" role="status" aria-live="polite"><span class="status-icon">●</span><span id="statusText" data-t="connecting">Đang kiểm tra kết nối…</span></div>
+    <form id="reportForm" novalidate>
+      <section class="panel"><div class="panel-head"><span class="step">01</span><div><h2 data-t="locationTitle">Thông tin sản xuất</h2><p data-t="locationDesc">Chọn ngày, xưởng và chuyền sản xuất</p></div></div>
+        <div class="fields three"><label><span data-t="date">Ngày sản xuất</span><input id="date" type="date" required></label><label><span data-t="factory">Xưởng</span><select id="factory" required><option value="A">Xưởng A</option><option value="B">Xưởng B</option><option value="C">Xưởng C</option><option value="D">Xưởng D</option></select></label><label><span data-t="line">Chuyền</span><select id="line" required></select></label></div>
+        <div class="fields two"><label><span data-t="process">Công đoạn</span><select id="process" required><option value="gc">Stockfit / GCĐ (底加)</option><option value="asm">Assembly / TH (成型)</option></select></label><label><span data-t="operator">Người nhập liệu</span><input id="operator" type="text" maxlength="80" autocomplete="name" required placeholder="VD: Nguyễn Văn A"></label></div>
+      </section>
+      <section class="panel"><div class="panel-head"><span class="step">02</span><div><h2 data-t="outputTitle">Sản lượng và nhân lực</h2><p data-t="outputDesc">Nhập tổng số đôi đã hoàn thành và số người làm ca chính</p></div></div>
+        <div class="fields three"><label><span data-t="total">Tổng số đôi hoàn thành</span><input id="total" type="number" min="0" max="20000" step="1" inputmode="numeric" required placeholder="350"></label><label><span data-t="hc">Nhân lực ca chính (HC)</span><input id="hc" type="number" min="1" max="1000" step="1" inputmode="numeric" required placeholder="53"></label><label><span data-t="hours">Giờ làm ca chính</span><input id="hours" type="number" min="0.5" max="16" step="0.5" inputmode="decimal" value="8" required></label></div>
+        <fieldset class="ot-group"><legend data-t="otQuestion">Hôm nay có tăng ca (OT) không?</legend><div class="choice-row"><label><input type="radio" name="otMode" value="none" required><span data-t="otNone">Không OT</span></label><label><input type="radio" name="otMode" value="yes"><span data-t="otYes">Có OT</span></label><label><input type="radio" name="otMode" value="unknown"><span data-t="otUnknown">Chưa có số liệu OT</span></label></div></fieldset>
+        <div class="fields three" id="otFields" hidden><label><span data-t="otPairs">Số đôi hoàn thành OT</span><input id="otPairs" type="number" min="0" max="20000" step="1" inputmode="numeric"></label><label><span data-t="otHC">Nhân lực OT</span><input id="otHC" type="number" min="1" max="1000" step="1" inputmode="numeric"></label><label><span data-t="otHours">Số giờ OT</span><input id="otHours" type="number" min="0.5" max="16" step="0.5" inputmode="decimal"></label></div>
+        <div id="preview" class="preview" aria-live="polite"><span data-t="previewTitle">Hiệu suất 8H dự kiến</span><strong>—</strong><small data-t="previewHelp">Nhập đủ sản lượng, HC và trạng thái OT để tính.</small></div>
+      </section>
+      <section class="panel"><div class="panel-head"><span class="step">03</span><div><h2 data-t="modelTitle">Mã giày sản xuất</h2><p data-t="modelDesc">Một chuyền có nhiều mã giày? Nhấn Thêm mã giày.</p></div></div>
+        <div id="models" class="models"></div><button id="addModel" type="button" class="secondary" data-t="addModel">＋ Thêm mã giày</button><p class="hint" data-t="modelHint">Tổng số đôi theo mã phải bằng tổng sản lượng ở trên. Có thể nhập mã mới.</p>
+        <label class="notes"><span data-t="note">Ghi chú (không bắt buộc)</span><textarea id="note" rows="2" maxlength="500" placeholder="WIP, máy móc, sửa hàng…"></textarea></label>
+      </section>
+      <section class="submit-panel"><button type="submit" id="save" class="save" disabled><span data-t="save">LƯU DỮ LIỆU</span> <span aria-hidden="true">→</span></button><p id="saveInfo" data-t="saveInfo">Chỉ hiển thị thành công sau khi máy chủ xác nhận đã lưu.</p></section>
+    </form>
+    <footer>FACTORY PRODUCTION INTELLIGENCE · <span data-t="footer">Dữ liệu được lưu trên máy chủ, không phải Excel.</span></footer>
+  </main>
+</body>
+</html>
