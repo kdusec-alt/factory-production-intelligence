@@ -6,10 +6,11 @@
   <meta name="color-scheme" content="light" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <title>Factory Production Intelligence | 產效智能管理</title>
-  <link rel="stylesheet" href="styles.css?v=13" />
+  <link rel="stylesheet" href="styles.css" />
   <script src="data/factory-data.js" defer></script>
-  <script src="app.js?v=13" defer></script>
-  <script src="records.js?v=13" defer></script>
+  <script src="app.js" defer></script>
+  <script src="records.js" defer></script>
+  <script src="ie.js" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -25,7 +26,7 @@
         <button class="nav-link" data-view="quality"><span>◇</span><span data-i18n="quality">品質與幹部</span></button>
         <button class="nav-link" data-view="audit"><span>☷</span><span data-i18n="audit">資料檢核</span></button>
       </nav>
-      <div class="side-bottom"><div class="privacy-icon">◈</div><strong data-i18n="localProcessing">本機安全分析</strong><p data-i18n="localNote">Excel僅在瀏覽器內處理，不會上傳伺服器。</p><span class="version">GITHUB PAGES · V1.3</span></div>
+      <div class="side-bottom"><div class="privacy-icon">◈</div><strong data-i18n="localProcessing">本機安全分析</strong><p data-i18n="localNote">Excel僅在瀏覽器內處理，不會上傳伺服器。</p><span class="version">GITHUB PAGES · V1.4</span></div>
     </aside>
     <main class="main">
       <header class="topbar"><div class="breadcrumbs">OPERATIONS <span>/</span> <span id="crumb">PRODUCTION DASHBOARD</span></div><div class="top-actions"><span class="status-dot"></span><span class="top-status" data-i18n="offline">LOCAL ANALYTICS</span><button id="langBtn" class="outline small">Tiếng Việt</button></div></header>
@@ -41,6 +42,7 @@
           <div class="entry-tabs" role="tablist" aria-label="Entry sections">
             <button type="button" class="entry-tab active" data-entry-tab="daily" data-i18n="tabDaily">每日總產量</button>
             <button type="button" class="entry-tab" data-entry-tab="model" data-i18n="tabModel">型體明細</button>
+            <button type="button" class="entry-tab" data-entry-tab="ie" data-i18n="tabIE">IE 標準設定</button>
             <button type="button" class="entry-tab" data-entry-tab="quality" data-i18n="tabQuality">品質改善追蹤</button>
             <button type="button" class="entry-tab" data-entry-tab="backup" data-i18n="tabBackup">資料備份與紀錄</button>
           </div>
@@ -63,6 +65,34 @@
               <div class="entry-actions"><button class="primary" type="submit" data-i18n="saveModel">儲存型體資料</button><button class="outline" type="button" id="resetModel" data-i18n="newRecord">新增／清空表單</button><span class="entry-hint" id="modelEditingHint"></span></div>
             </form><article class="panel entry-list-panel"><div class="panel-head"><h3 data-i18n="recentModels">最近型體紀錄</h3></div><div class="table-scroll" id="entryModelTable"></div></article>
           </section>
+          <section id="entry-ie" class="entry-pane">
+            <form id="ieForm" class="panel entry-panel">
+              <div class="panel-head"><div><h3 data-i18n="ieFormTitle">IE 型體標準工時登錄</h3><p data-i18n="ieFormSub">新增任意型體，底加／成型分別設定標準人分鐘、節拍、專用HC與效率；數值留空表示尚未提供IE標準。</p></div><span class="tag">IE / SAM / CYCLE</span></div>
+              <div class="entry-form-grid">
+                <label><span data-i18n="modelName">型體代碼</span><input id="ieModel" type="text" list="modelOptions" maxlength="70" required placeholder="BBB-1698" /></label>
+                <label><span data-i18n="ieDisplayName">型體名稱（選填）</span><input id="ieDisplayName" type="text" maxlength="120" placeholder="Sabrina 4" /></label>
+                <label><span data-i18n="ieEffectiveDate">IE生效日（留空＝適用所有歷史日期）</span><input id="ieEffectiveDate" type="date" /></label>
+                <label><span data-i18n="ieShiftHours">模擬工時（小時）</span><input id="ieShiftHours" type="number" min="0.5" max="24" step="0.5" value="8" /></label>
+              </div>
+              <div class="entry-process-grid">
+                <fieldset><legend>Stockfit / GCĐ</legend><div class="entry-form-grid">
+                  <label><span data-i18n="ieSAM">SAM 標準人分鐘／雙</span><input id="ieGcSam" type="number" min="0" step="0.001" placeholder="—" /></label>
+                  <label><span data-i18n="ieCycle">IE節拍 秒／雙</span><input id="ieGcCycle" type="number" min="0" step="0.01" placeholder="—" /></label>
+                  <label><span data-i18n="ieDedicatedHC">IE 專用HC（模擬）</span><input id="ieGcHC" type="number" min="1" step="1" placeholder="—" /></label>
+                  <label><span data-i18n="ieEfficiency">目標效率 %</span><input id="ieGcEff" type="number" min="0.01" max="100" step="0.1" placeholder="—" /></label>
+                </div><div id="ieGcPreview" class="entry-preview">—</div></fieldset>
+                <fieldset><legend>Assembly / TH</legend><div class="entry-form-grid">
+                  <label><span data-i18n="ieSAM">SAM 標準人分鐘／雙</span><input id="ieAsmSam" type="number" min="0" step="0.001" placeholder="—" /></label>
+                  <label><span data-i18n="ieCycle">IE節拍 秒／雙</span><input id="ieAsmCycle" type="number" min="0" step="0.01" placeholder="—" /></label>
+                  <label><span data-i18n="ieDedicatedHC">IE 專用HC（模擬）</span><input id="ieAsmHC" type="number" min="1" step="1" placeholder="—" /></label>
+                  <label><span data-i18n="ieEfficiency">目標效率 %</span><input id="ieAsmEff" type="number" min="0.01" max="100" step="0.1" placeholder="—" /></label>
+                </div><div id="ieAsmPreview" class="entry-preview">—</div></fieldset>
+              </div>
+              <label class="entry-full"><span data-i18n="ieNotes">IE備註／版本來源</span><textarea id="ieNotes" rows="2" maxlength="1000" placeholder="IE approved standard / 工序與版本"></textarea></label>
+              <div class="entry-actions"><button class="primary" type="submit" data-i18n="ieSave">儲存IE標準／新增型體</button><button class="outline" type="button" id="ieReset" data-i18n="newRecord">新增／清空表單</button><span class="entry-hint" id="ieEditingHint"></span></div>
+            </form>
+            <article class="panel entry-list-panel"><div class="panel-head"><div><h3 data-i18n="ieRegistryTitle">型體與IE標準資料庫</h3><p data-i18n="ieRegistrySub">IE標準可以新增生效版本；未輸入標準的型體仍可登錄產量。刪除IE標準不會刪除生產紀錄。</p></div></div><div id="ieRegistryTable" class="table-scroll"></div></article>
+          </section>
           <section id="entry-quality" class="entry-pane">
             <form id="qualityForm" class="panel entry-panel"><div class="panel-head"><div><h3 data-i18n="qualityFormTitle">品質異常與改善追蹤</h3><p data-i18n="qualityFormSub">記錄問題、當責人、改善措施、追蹤狀態與期限。</p></div></div>
               <div class="entry-form-grid"><label><span data-i18n="date">發生日期</span><input id="qualityDate" type="date" /></label><label><span data-i18n="area">區域</span><select id="qualityArea"><option value="GCĐ">Stockfit / GCĐ</option><option value="TH">Assembly / TH</option><option value="MK">Stitching / MK</option><option value="Cutting">Cutting</option><option value="Other">Other</option></select></label><label><span data-i18n="modelName">型體代碼</span><input id="qualityModel" type="text" list="modelOptions" maxlength="70" required /></label><label><span data-i18n="affected">影響雙數</span><input id="qualityAffected" type="number" min="0" step="1" /></label><label><span data-i18n="directOwner">當責幹部</span><input id="qualityOwner" type="text" maxlength="120" /></label><label><span data-i18n="seniorOwner">高階幹部</span><input id="qualitySenior" type="text" maxlength="120" /></label><label><span data-i18n="qualityStatus">改善狀態</span><select id="qualityStatus"><option value="open">Open</option><option value="progress">In Progress</option><option value="closed">Closed</option></select></label><label><span data-i18n="dueDate">改善期限</span><input id="qualityDue" type="date" /></label></div>
@@ -82,7 +112,8 @@
         </div>
         <div id="view-trends" class="view"><div class="section-head"><div><h2 data-i18n="dailyTrend">每日產量與異常監控</h2><p data-i18n="dailyTrendSub">依HC、人時產出與歷史基準監測波動</p></div><button id="downloadDaily" class="outline" data-i18n="exportCsv">匯出CSV</button></div><article class="panel chart-panel"><div class="panel-head"><h3 data-i18n="dailyOutput">每日8H正常班完成產量</h3><span class="chart-legend"><i class="dot gc"></i>Stockfit <i class="dot asm"></i>Assembly</span></div><div id="dailyChart" class="chart big"></div></article><article class="panel"><div class="panel-head"><h3 data-i18n="dailyDetail">每日明細與差異</h3><span class="tag muted" id="dailyCount"></span></div><div class="table-scroll" id="dailyTable"></div></article></div>
         <div id="view-planner" class="view"><div class="section-head"><div><h2 data-i18n="capacityTitle">HC 合理產能模擬</h2><p data-i18n="capacitySub">以比較期間的加權人時產出建立基準，非增員建議</p></div><span class="tag muted" data-i18n="simulation">SCENARIO PLANNING</span></div><div class="planner-grid"><article class="panel"><div class="panel-head"><h3>Stockfit / GCĐ</h3><span class="tag">PROCESS 01</span></div><div class="planner-inputs"><label><span data-i18n="plannedHc">預定HC</span><input id="gcHC" type="number" min="1" step="1" value="53"></label><label><span data-i18n="targetPairs">目標雙數</span><input id="gcTarget" type="number" min="1" step="1" value="400"></label><label><span data-i18n="hours">正常工時</span><input id="gcHours" type="number" min="1" max="24" step="0.5" value="8"></label></div><div id="gcPlan"></div></article><article class="panel"><div class="panel-head"><h3>Assembly / TH</h3><span class="tag">PROCESS 02</span></div><div class="planner-inputs"><label><span data-i18n="plannedHc">預定HC</span><input id="asmHC" type="number" min="1" step="1" value="83"></label><label><span data-i18n="targetPairs">目標雙數</span><input id="asmTarget" type="number" min="1" step="1" value="450"></label><label><span data-i18n="hours">正常工時</span><input id="asmHours" type="number" min="1" max="24" step="0.5" value="8"></label></div><div id="asmPlan"></div></article></div><div class="note"><strong data-i18n="plannerNoteTitle">試算使用限制</strong><p data-i18n="plannerNote">預估值採線性假設；不代表增加人數就能達成目標。Sabrina 4雙製程、WIP等待、型體組合、返修與品質風險必須由主管確認。</p></div></div>
-        <div id="view-models" class="view"><div class="section-head"><div><h2 data-i18n="modelTitle">型體產出比較</h2><p data-i18n="modelSub">依底加與成型分別比較；各型體共用HC，不推算型體人時效率</p></div></div><article class="panel"><div class="panel-head"><h3 data-i18n="modelCompare">各型體正常班產出</h3><span class="tag muted">MODEL MIX</span></div><div id="modelTable" class="table-scroll"></div></article><div class="note"><strong data-i18n="modelCautionTitle">型體產效提醒</strong><p data-i18n="modelCaution">BBB-1698的Pass 1 / Pass 2為雙製程；目前只能計算最終完成產量，不能以單一型體產量除以整線HC判斷該型體實際工序效率。</p></div></div>
+        <div id="view-models" class="view"><div class="section-head"><div><h2 data-i18n="modelTitle">型體產出比較</h2><p data-i18n="modelSub">依底加與成型分別比較；各型體共用HC，不推算型體人時效率</p></div></div><article class="panel"><div class="panel-head"><h3 data-i18n="modelCompare">各型體正常班產出</h3><span class="tag muted">MODEL MIX</span></div><div id="modelTable" class="table-scroll"></div></article>
+          <article class="panel entry-list-panel"><div class="panel-head"><div><h3 data-i18n="ieMixTitle">IE標準工時 × 實際型體組合</h3><p data-i18n="ieMixSub">依所選比較期間的型體正常班產量與IE標準，估算工作負荷及平均合理HC；缺少IE資料不會推估。</p></div><button id="goIE" class="outline" type="button" data-i18n="ieEdit">新增／編輯IE標準</button></div><div id="ieMixSummary" class="ie-mix-summary"></div><div id="ieMixTable" class="table-scroll"></div></article><div class="note"><strong data-i18n="modelCautionTitle">型體產效提醒</strong><p data-i18n="modelCaution">BBB-1698的Pass 1 / Pass 2為雙製程；目前只能計算最終完成產量，不能以單一型體產量除以整線HC判斷該型體實際工序效率。</p></div></div>
         <div id="view-quality" class="view"><div class="section-head"><div><h2 data-i18n="qualityTitle">品質與當責幹部</h2><p data-i18n="qualitySub">按PPT原始問題紀錄展示，不自動重複歸責或以數量直接扣獎金</p></div></div><div id="qualitySummary" class="kpi-grid quality-kpis"></div><article class="panel"><div class="panel-head"><h3 data-i18n="qualityDetail">品質問題明細</h3><label class="select-label"><span data-i18n="filterArea">區域</span><select id="areaFilter"><option value="all">All</option></select></label></div><div id="qualityTable" class="table-scroll"></div></article></div>
         <div id="view-audit" class="view"><div class="section-head"><div><h2 data-i18n="auditTitle">資料品質與檢核</h2><p data-i18n="auditSub">檢查OT、缺漏、日期與資料一致性；不把缺漏當作真實0</p></div></div><div id="auditSummary" class="kpi-grid quality-kpis"></div><article class="panel"><div class="panel-head"><h3 data-i18n="auditDetail">待確認項目</h3></div><div id="auditTable" class="table-scroll"></div></article></div>
         <footer class="footer">FACTORY PRODUCTION INTELLIGENCE <span>·</span> <span data-i18n="footer">所有分析在本機完成 · 資料不會自動同步至團隊</span></footer>

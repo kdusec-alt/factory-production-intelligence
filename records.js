@@ -15,7 +15,7 @@ let db=null, currentTab='daily', editingDaily=null, editingModel=null, editingQu
 let busy=false;
 const today=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);};
 const deep=x=>JSON.parse(JSON.stringify(x));
-const allState=()=>deep({daily:state.daily,models:state.models,quality:state.quality,files:state.files,importNotes:state.importNotes,demo:false,hosted:false});
+const allState=()=>deep({daily:state.daily,models:state.models,quality:state.quality,ieStandards:state.ieStandards||[],files:state.files,importNotes:state.importNotes,demo:false,hosted:false});
 window.captureFactoryState=allState;
 const applyState=s=>{
  if(!s||!Array.isArray(s.daily)||!Array.isArray(s.models)||!Array.isArray(s.quality))throw new Error('Invalid backup schema');
@@ -31,6 +31,7 @@ const applyState=s=>{
   return {...r,gcTotal,gcOT,asmTotal,asmOT,gcNormal:gcTotal===null||gcOT===null?null:gcTotal-gcOT,asmNormal:asmTotal===null||asmOT===null?null:asmTotal-asmOT};
  });
  state.quality=s.quality.map((q,i)=>({...q,id:q.id||`legacy-${i}`}));
+ state.ieStandards=Array.isArray(s.ieStandards)?s.ieStandards.map(x=>({...x})):[];
  state.files=Array.isArray(s.files)?s.files:['Browser Database'];
  state.importNotes=Array.isArray(s.importNotes)?s.importNotes:[];
  state.demo=false;state.hosted=false;
@@ -56,6 +57,7 @@ async function persist(action,before=null){
  revisions=(await getRevisions()).slice(-30).reverse();
  $('dbStatus').textContent=tr('已儲存於此瀏覽器','Đã lưu trên trình duyệt này')+' · '+new Date(now).toLocaleString(state.lang==='zh'?'zh-TW':'vi-VN')+' · '+state.daily.length+' '+tr('生產日','ngày sản xuất');
 }
+window.commitFactoryMutation=commit;
 window.persistFactoryState=async(action='External import',before=null)=>{
  try{await persist(action,before);render();}catch(e){showMessage(tr('本機儲存失敗：','Lưu trên thiết bị thất bại: ')+e.message,true);throw e;}
 };
@@ -142,9 +144,9 @@ function renderWorkspace(){
  $('revisionTable').innerHTML=revisions.length?`<table class="data-table"><thead><tr><th>${tr('時間','Thời gian')}</th><th>${tr('修改項目','Thao tác')}</th></tr></thead><tbody>${revisions.slice(0,15).map(r=>`<tr><td>${esc(new Date(r.at).toLocaleString(state.lang==='zh'?'zh-TW':'vi-VN'))}</td><td>${esc(r.action)}</td></tr>`).join('')}</tbody></table>`:empty(tr('目前沒有修改紀錄','Chưa có lịch sử thay đổi'));
 }
 window.renderRecordWorkspace=renderWorkspace;
-function exportBackup(){const data={format:'factory-production-intelligence',schemaVersion:13,exportedAt:new Date().toISOString(),snapshot:allState()};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='factory-production-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
+function exportBackup(){const data={format:'factory-production-intelligence',schemaVersion:14,exportedAt:new Date().toISOString(),snapshot:allState()};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='factory-production-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
 window.exportFactoryBackup=exportBackup;
-async function importBackup(file){if(file.size>25*1024*1024)throw new Error('Backup exceeds 25MB');const raw=JSON.parse(await file.text());if(raw.format!=='factory-production-intelligence'||raw.schemaVersion!==13||!raw.snapshot)throw new Error('Invalid backup format');if(!confirm(tr('還原備份將取代目前本機資料，確定繼續？','Khôi phục bản sao lưu sẽ thay thế dữ liệu hiện tại. Tiếp tục?')))return;await commit('Restore JSON backup',()=>{applyState(raw.snapshot);setDefaultPeriods();});}
+async function importBackup(file){if(file.size>25*1024*1024)throw new Error('Backup exceeds 25MB');const raw=JSON.parse(await file.text());if(raw.format!=='factory-production-intelligence'||![13,14].includes(raw.schemaVersion)||!raw.snapshot)throw new Error('Invalid backup format');if(!confirm(tr('還原備份將取代目前本機資料，確定繼續？','Khôi phục bản sao lưu sẽ thay thế dữ liệu hiện tại. Tiếp tục?')))return;await commit('Restore JSON backup',()=>{applyState(raw.snapshot);setDefaultPeriods();});}
 async function undo(){const last=revisions[0];if(!last||!last.before){showMessage(tr('沒有可回復的修改紀錄','Không có bản ghi để hoàn tác'),true);return;}if(!confirm(tr('確定回復上次修改前的資料？','Khôi phục dữ liệu trước lần sửa gần nhất?')))return;await commit('Undo '+last.action,()=>{applyState(last.before);setDefaultPeriods();});}
 function bindWorkspace(){
  $('quickEntry').addEventListener('click',()=>{setView('entry');switchTab('daily');$('entryDate').focus();});
@@ -167,7 +169,7 @@ function bindWorkspace(){
  $('undoChange').addEventListener('click',()=>{void undo();});
 }
 window.initializeRecordSystem=async()=>{
- bindWorkspace();clearDaily();clearModel();clearQuality();
+ bindWorkspace();clearDaily();clearModel();clearQuality();window.initializeIESystem?.();
  try{
   db=await openDB();const stored=await getStoredSnapshot();
   if(stored?.snapshot){applyState(stored.snapshot);setDefaultPeriods();}

@@ -1,43 +1,25 @@
-# Factory Production Intelligence — V1.3 (Direct Entry)
+# Factory Production Intelligence — V1.4 (IE + Dynamic Models)
 
-**繁體中文 / Tiếng Việt** · GitHub Pages · Browser-side IndexedDB records · No Excel required for daily work.
+Traditional Chinese / Tiếng Việt. Static GitHub Pages website with browser-local IndexedDB (no server database).
 
-## Live site
+## New in V1.4
 
-- Traditional Chinese: https://kdusec-alt.github.io/factory-production-intelligence/
-- Vietnamese: https://kdusec-alt.github.io/factory-production-intelligence/?lang=vn
+- **IE standard management** (每日登錄 → IE 標準設定 / Nhập dữ liệu → Tiêu chuẩn IE): create new model codes, add optional model name and IE effective-date versions, edit and delete IE standards independently of production records.
+- Set **Stockfit (GCĐ)** and **Assembly (TH)** IE standard labor content **SAM in labor-minutes/pair**, line **Cycle Time in seconds/pair**, optional dedicated planned HC and target efficiency separately.
+- Live 8-hour (configurable hours) IE planning: **SAM-based labor pacing** = SAM × 60 ÷ (dedicated HC × target efficiency fraction); **planned output interval** = max(SAM-based pacing, provided IE cycle seconds); **expected pairs** = floor(hours × 3600 ÷ planned interval). A missing input is not guessed.
+- **Model comparison** includes dynamic models and current IE values, with comparison-period model mix, SAM labor-hours and model-mix required HC **only when all relevant IE SAM, target efficiency, normal output, and model reconciliation are complete**.
+- **IE versioning**: optional effective date. Blank means valid from the beginning; historical comparison uses the IE version effective on each production date. Changes to current standards do not automatically rewrite older effective-date versions.
+- Existing daily entry, model output entry, quality follow-up, trends, local data persistence and JSON backup remain.
+- **Backups** now include IE standards. V1.3 JSON backups are accepted for migration. The IndexedDB database name is unchanged to retain local V1.3 records.
 
-## What's new in V1.3
+## IE measurement caveats
 
-- **每日登錄 / Nhập dữ liệu**: enter date, daily completed Stockfit/GCĐ and Assembly/TH output, normal HC, OT output/HC, normal/OT hours and notes directly on the site.
-- **型體明細 / Chi tiết mã giày**: enter or edit each date/model's Stockfit and Assembly totals and OT pairs. No model-level HC is invented.
-- **品質改善追蹤 / Theo dõi chất lượng**: enter issue, model, affected pairs, responsible/senior cadre, corrective action, status and due date.
-- **Browser-local persistence**: records saved in IndexedDB and loaded when the same browser returns to the site. No Excel needed for new records.
-- **Edit/delete**, change history and undo, **JSON backup/restore** for transferring data to another browser or recovering from cleared storage.
-- Existing dashboards, daily trends, HC planning, model comparisons and data audit immediately use newly saved records.
-- Initial database seeded from previously published 36 production days, 108 model records and 28 September quality issues.
-- Legacy Excel import remains available as an optional migration tool; it is not required for daily use.
+**SAM** is the sum of standard human labor minutes required per pair, NOT elapsed time through Stockfit or Assembly. **Cycle Time** is the line's planned completion interval (seconds per pair), NOT the total production lead time. If both constraints are known, the slower (larger) interval limits throughput. Dedicated HC/target efficiency must be entered for SAM-based throughput; if only cycle time is known, cycle-only theoretical throughput is displayed and not described as labor-feasible. Missing IE standards are not estimated from historical output. No invented IE values are seeded.
 
-## IMPORTANT: Storage architecture
+Sabrina 4 Stockfit has two passes. Model-level completed output and standard time do not prove actual process lead time or true labor utilization. Model-mix HC planning requires complete model allocation and standards, and assumes standard labor content and efficiencies apply to the recorded mix; quality losses and WIP may reduce feasible output.
 
-This is a **single-browser** data-entry application. GitHub Pages does not provide a database, server authentication or automatic synchronization. **A record saved on computer A will not appear on computer B**. If you clear browser site data, switch browser profiles, use incognito mode, or change device, data may be lost unless you have exported and restored a JSON backup.
+## Data persistence / privacy
 
-For team-wide entry, access control, reliable centralized storage, auditability and backup, the next step is to add an authenticated backend database (e.g., Supabase/Postgres, Firebase, or a hosted server). Never embed admin API keys in a public GitHub Pages app. The V1.3 app does **not** upload manually entered records to GitHub or any cloud database.
+New entries are stored in **this browser's IndexedDB only**. GitHub Pages has no multi-user synchronization. Export JSON backups regularly. This public repository already includes historical factory data explicitly uploaded by its owner; new manual IE and daily records are not automatically uploaded to GitHub.
 
-## Existing public data
-
-The repo is public and still includes the historical Excel workbook and bundled historical production/quality data from V1.2, as explicitly requested by the owner. These files are publicly accessible. Manually entered V1.3 data is not published to the repo.
-
-## Calculations and cautions
-
-- 8H final output = total daily completed output − OT completed output. Missing OT must remain `null`/blank, not silently become zero.
-- Weighted pairs/man-hour = SUM(8H final output) / SUM(normal HC × normal hours), by Stockfit and Assembly **separately**.
-- Stockfit and Assembly are sequential processes; do not add their output as if they were distinct finished pairs.
-- Sabrina 4's two-pass Stockfit means completed output can be recognized later than process work; the dashboard measures final-output productivity, not true operation-cycle efficiency.
-- For October data where OT was recorded as zero but OT HC blank, confirm actual OT status before concluding overtime was eliminated.
-- HC planning is a linear scenario, **not** a promise that adding workers increases output proportionally.
-- Historical quality issues with no recorded event date remain undated. No date is invented when editing them.
-
-## Backup workflow
-
-Open **每日登錄 → 資料備份與紀錄** (VN: **Nhập dữ liệu → Sao lưu và lịch sử**) and click **下載完整JSON備份**. Save the JSON in a secure location. Use **還原JSON備份** to restore on another browser; this replaces that browser's current data. Export at least once per workday until a centralized database is implemented.
+Open: https://kdusec-alt.github.io/factory-production-intelligence/ (VN: add `?lang=vn`).
