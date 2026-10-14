@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="styles.css" />
   <script src="data/factory-data.js" defer></script>
   <script src="app.js" defer></script>
+  <script src="records.js" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -16,6 +17,7 @@
       <div class="brand"><div class="brand-mark">F<span>·</span></div><div><strong>FACTORY<br>INTELLIGENCE</strong><small>PRODUCTION ANALYTICS</small></div></div>
       <div class="side-label" data-i18n="workspace">工作區</div>
       <nav class="nav" aria-label="Navigation">
+        <button class="nav-link" data-view="entry"><span>✎</span><span data-i18n="entry">每日登錄</span></button>
         <button class="nav-link active" data-view="overview"><span>◫</span><span data-i18n="overview">產效總覽</span></button>
         <button class="nav-link" data-view="trends"><span>⌁</span><span data-i18n="trends">每日趨勢</span></button>
         <button class="nav-link" data-view="planner"><span>▦</span><span data-i18n="planner">HC 產能規劃</span></button>
@@ -23,15 +25,55 @@
         <button class="nav-link" data-view="quality"><span>◇</span><span data-i18n="quality">品質與幹部</span></button>
         <button class="nav-link" data-view="audit"><span>☷</span><span data-i18n="audit">資料檢核</span></button>
       </nav>
-      <div class="side-bottom"><div class="privacy-icon">◈</div><strong data-i18n="localProcessing">本機安全分析</strong><p data-i18n="localNote">Excel僅在瀏覽器內處理，不會上傳伺服器。</p><span class="version">GITHUB PAGES · V1.2</span></div>
+      <div class="side-bottom"><div class="privacy-icon">◈</div><strong data-i18n="localProcessing">本機安全分析</strong><p data-i18n="localNote">Excel僅在瀏覽器內處理，不會上傳伺服器。</p><span class="version">GITHUB PAGES · V1.3</span></div>
     </aside>
     <main class="main">
       <header class="topbar"><div class="breadcrumbs">OPERATIONS <span>/</span> <span id="crumb">PRODUCTION DASHBOARD</span></div><div class="top-actions"><span class="status-dot"></span><span class="top-status" data-i18n="offline">LOCAL ANALYTICS</span><button id="langBtn" class="outline small">Tiếng Việt</button></div></header>
       <div class="page">
-        <div class="headline"><div><div class="eyebrow" data-i18n="eyebrow">OPERATIONAL PERFORMANCE CENTER</div><h1 id="pageTitle" data-i18n="overviewTitle">產效智能管理儀表板</h1><p class="lead" id="pageSubtitle" data-i18n="overviewSub">8H正常班、OT、HC與品質的整合分析，協助管理每日產出及生產穩定性。</p></div><div class="headline-actions"><button id="demoBtn" class="outline" data-i18n="demo">重新載入資料</button><button id="downloadVN" class="outline" data-i18n="downloadVN">下載越文Excel</button><label class="primary upload-label" for="fileInput"><span>↑</span><span data-i18n="upload">匯入Excel</span></label><input id="fileInput" type="file" accept=".xlsx,.csv" multiple hidden /></div></div>
-        <div class="import-strip"><div class="file-state"><span class="file-icon">▣</span><div><strong id="sourceTitle">尚未匯入資料</strong><small id="sourceDetail">支援 Master_Daily / Model_Data / Quality_Issues / Sheet2</small></div></div><div class="file-state-right"><span id="datasetTag" class="tag muted">NO DATA</span><button class="text-button" id="clearBtn" data-i18n="clear">清除資料</button></div></div>
+        <div class="headline"><div><div class="eyebrow" data-i18n="eyebrow">OPERATIONAL PERFORMANCE CENTER</div><h1 id="pageTitle" data-i18n="overviewTitle">產效智能管理儀表板</h1><p class="lead" id="pageSubtitle" data-i18n="overviewSub">8H正常班、OT、HC與品質的整合分析，協助管理每日產出及生產穩定性。</p></div><div class="headline-actions"><button id="demoBtn" class="outline" data-i18n="demo">重新載入資料</button><button id="downloadVN" class="outline" data-i18n="downloadVN">匯出備份</button><button id="quickEntry" class="primary" type="button" data-i18n="quickEntry">＋ 新增日報</button><label class="outline upload-label" for="fileInput"><span>↑</span><span data-i18n="upload">匯入Excel</span></label><input id="fileInput" type="file" accept=".xlsx,.csv" multiple hidden /></div></div>
+        <div class="import-strip"><div class="file-state"><span class="file-icon">▣</span><div><strong id="sourceTitle">尚未匯入資料</strong><small id="sourceDetail">支援 Master_Daily / Model_Data / Quality_Issues / Sheet2</small></div></div><div class="file-state-right"><span id="datasetTag" class="tag muted">NO DATA</span><button class="text-button" id="clearBtn" data-i18n="clear">資料管理</button></div></div>
         <div id="message" class="message hidden" role="status"></div>
+        <div class="storage-strip" id="storageStrip"><span class="storage-dot"></span><span id="dbStatus">正在檢查本機資料庫…</span><button id="goEntry" type="button" class="text-button" data-i18n="entry">每日登錄</button></div>
         <section id="filters" class="filter-bar"><div class="filter-title"><strong data-i18n="period">比較期間</strong><span data-i18n="weighted">使用8H正常班與加權人時產出</span></div><div class="date-field"><label for="baseStart" data-i18n="baselineStart">基準開始</label><input id="baseStart" type="date"></div><div class="date-field"><label for="baseEnd" data-i18n="baselineEnd">基準結束</label><input id="baseEnd" type="date"></div><div class="arrow">→</div><div class="date-field"><label for="compStart" data-i18n="compareStart">比較開始</label><input id="compStart" type="date"></div><div class="date-field"><label for="compEnd" data-i18n="compareEnd">比較結束</label><input id="compEnd" type="date"></div></section>
+
+        <div id="view-entry" class="view">
+          <div class="section-head"><div><h2 data-i18n="entryTitle">每日生產資料登錄</h2><p data-i18n="entrySub">直接輸入並儲存，所有儀表板、產能模擬與異常分析即時更新。</p></div><span class="tag" data-i18n="localDB">本機資料庫</span></div>
+          <div class="entry-tabs" role="tablist" aria-label="Entry sections">
+            <button type="button" class="entry-tab active" data-entry-tab="daily" data-i18n="tabDaily">每日總產量</button>
+            <button type="button" class="entry-tab" data-entry-tab="model" data-i18n="tabModel">型體明細</button>
+            <button type="button" class="entry-tab" data-entry-tab="quality" data-i18n="tabQuality">品質改善追蹤</button>
+            <button type="button" class="entry-tab" data-entry-tab="backup" data-i18n="tabBackup">資料備份與紀錄</button>
+          </div>
+          <section id="entry-daily" class="entry-pane active">
+            <form id="dailyForm" class="panel entry-panel">
+              <div class="panel-head"><div><h3 data-i18n="dailyFormTitle">日產量與HC登錄</h3><p data-i18n="dailyFormSub">8H正常班產量＝當日總產量－OT產量；缺少OT資料請留空，勿填假0。</p></div><span class="tag">8H / OT</span></div>
+              <div class="entry-form-grid"><label><span data-i18n="date">生產日期</span><input id="entryDate" type="date" required /></label><label><span data-i18n="entryOperator">登錄人員／備註</span><input id="entryOperator" type="text" maxlength="120" placeholder="Optional" /></label></div>
+              <div class="entry-process-grid">
+                <fieldset><legend>Stockfit / GCĐ</legend><div class="entry-form-grid"><label><span data-i18n="totalPairs">當日總完成雙數</span><input id="entryGcTotal" type="number" min="0" step="1" required /></label><label><span data-i18n="normalHC">正常班 HC</span><input id="entryGcHC" type="number" min="1" step="1" required /></label><label><span data-i18n="otPairs">OT完成雙數</span><input id="entryGcOT" type="number" min="0" step="1" /></label><label><span data-i18n="otHC">OT HC</span><input id="entryGcOTHC" type="number" min="0" step="1" /></label><label><span data-i18n="normalHours">正常班工時</span><input id="entryGcHours" type="number" min="0.5" max="24" step="0.5" value="8" required /></label></div><div class="entry-preview" id="gcLivePreview">—</div></fieldset>
+                <fieldset><legend>Assembly / TH</legend><div class="entry-form-grid"><label><span data-i18n="totalPairs">當日總完成雙數</span><input id="entryAsmTotal" type="number" min="0" step="1" required /></label><label><span data-i18n="normalHC">正常班 HC</span><input id="entryAsmHC" type="number" min="1" step="1" required /></label><label><span data-i18n="otPairs">OT完成雙數</span><input id="entryAsmOT" type="number" min="0" step="1" /></label><label><span data-i18n="otHC">OT HC</span><input id="entryAsmOTHC" type="number" min="0" step="1" /></label><label><span data-i18n="normalHours">正常班工時</span><input id="entryAsmHours" type="number" min="0.5" max="24" step="0.5" value="8" required /></label></div><div class="entry-preview" id="asmLivePreview">—</div></fieldset>
+              </div>
+              <div class="entry-form-grid entry-extra"><label><span data-i18n="otHours">OT工時（如有）</span><input id="entryOtHours" type="number" min="0" max="16" step="0.5" /></label><label class="entry-checkbox"><input id="entryNoOT" type="checkbox" /><span data-i18n="noOT">確認當日完全沒有OT（將OT產量設為0）</span></label></div>
+              <div class="entry-actions"><button class="primary" type="submit" id="saveDaily" data-i18n="saveDaily">儲存當日紀錄</button><button class="outline" type="button" id="resetDaily" data-i18n="newRecord">新增／清空表單</button><span class="entry-hint" id="dailyEditingHint"></span></div>
+            </form>
+            <article class="panel entry-list-panel"><div class="panel-head"><div><h3 data-i18n="recentRecords">最近生產紀錄</h3><p data-i18n="editHint">選擇「編輯」可直接修改既有資料，修改後分析自動重算。</p></div></div><div class="table-scroll" id="entryDailyTable"></div></article>
+          </section>
+          <section id="entry-model" class="entry-pane">
+            <form id="modelForm" class="panel entry-panel"><div class="panel-head"><div><h3 data-i18n="modelFormTitle">型體產量登錄</h3><p data-i18n="modelFormSub">同一日期、同一型體為一筆紀錄；型體HC共用，不自行分攤。</p></div></div>
+              <div class="entry-form-grid"><label><span data-i18n="date">日期</span><input id="modelDate" type="date" required /></label><label><span data-i18n="modelName">型體代碼</span><input id="modelName" type="text" list="modelOptions" maxlength="70" required placeholder="BBB-1698" /><datalist id="modelOptions"><option value="BBB-1698"></option><option value="SWB-1285-1"></option><option value="SOB-1632"></option></datalist></label><label><span>Stockfit / GCĐ · <span data-i18n="totalPairs">總完成雙數</span></span><input id="modelGcTotal" type="number" min="0" step="1" /></label><label><span>Stockfit / GCĐ · OT</span><input id="modelGcOT" type="number" min="0" step="1" /></label><label><span>Assembly / TH · <span data-i18n="totalPairs">總完成雙數</span></span><input id="modelAsmTotal" type="number" min="0" step="1" /></label><label><span>Assembly / TH · OT</span><input id="modelAsmOT" type="number" min="0" step="1" /></label></div>
+              <div class="entry-actions"><button class="primary" type="submit" data-i18n="saveModel">儲存型體資料</button><button class="outline" type="button" id="resetModel" data-i18n="newRecord">新增／清空表單</button><span class="entry-hint" id="modelEditingHint"></span></div>
+            </form><article class="panel entry-list-panel"><div class="panel-head"><h3 data-i18n="recentModels">最近型體紀錄</h3></div><div class="table-scroll" id="entryModelTable"></div></article>
+          </section>
+          <section id="entry-quality" class="entry-pane">
+            <form id="qualityForm" class="panel entry-panel"><div class="panel-head"><div><h3 data-i18n="qualityFormTitle">品質異常與改善追蹤</h3><p data-i18n="qualityFormSub">記錄問題、當責人、改善措施、追蹤狀態與期限。</p></div></div>
+              <div class="entry-form-grid"><label><span data-i18n="date">發生日期</span><input id="qualityDate" type="date" /></label><label><span data-i18n="area">區域</span><select id="qualityArea"><option value="GCĐ">Stockfit / GCĐ</option><option value="TH">Assembly / TH</option><option value="MK">Stitching / MK</option><option value="Cutting">Cutting</option><option value="Other">Other</option></select></label><label><span data-i18n="modelName">型體代碼</span><input id="qualityModel" type="text" list="modelOptions" maxlength="70" required /></label><label><span data-i18n="affected">影響雙數</span><input id="qualityAffected" type="number" min="0" step="1" /></label><label><span data-i18n="directOwner">當責幹部</span><input id="qualityOwner" type="text" maxlength="120" /></label><label><span data-i18n="seniorOwner">高階幹部</span><input id="qualitySenior" type="text" maxlength="120" /></label><label><span data-i18n="qualityStatus">改善狀態</span><select id="qualityStatus"><option value="open">Open</option><option value="progress">In Progress</option><option value="closed">Closed</option></select></label><label><span data-i18n="dueDate">改善期限</span><input id="qualityDue" type="date" /></label></div>
+              <label class="entry-full"><span data-i18n="issueDescription">問題描述</span><textarea id="qualityDesc" rows="2" maxlength="1000" required></textarea></label>
+              <label class="entry-full"><span data-i18n="actionTaken">改善措施／追蹤紀錄</span><textarea id="qualityAction" rows="2" maxlength="1500"></textarea></label>
+              <div class="entry-actions"><button class="primary" type="submit" data-i18n="saveQuality">儲存品質問題</button><button class="outline" type="button" id="resetQuality" data-i18n="newRecord">新增／清空表單</button><span class="entry-hint" id="qualityEditingHint"></span></div>
+            </form><article class="panel entry-list-panel"><div class="panel-head"><h3 data-i18n="recentQuality">品質改善紀錄</h3></div><div class="table-scroll" id="entryQualityTable"></div></article>
+          </section>
+          <section id="entry-backup" class="entry-pane"><article class="panel"><div class="panel-head"><div><h3 data-i18n="backupTitle">資料庫備份與復原</h3><p data-i18n="backupSub">資料儲存在目前瀏覽器。換電腦或清除瀏覽資料前，請先下載JSON備份。</p></div></div><div class="backup-actions"><button class="primary" id="exportBackup" type="button" data-i18n="exportBackup">下載完整JSON備份</button><label class="outline upload-label" for="importBackup" data-i18n="importBackup">還原JSON備份</label><input type="file" id="importBackup" accept=".json,application/json" hidden /><button class="outline" type="button" id="undoChange" data-i18n="undoChange">回復上次修改</button></div><div class="note"><strong data-i18n="storageLimitTitle">儲存限制</strong><p data-i18n="storageLimit">本版是單一瀏覽器資料庫，不會跨電腦自動同步，也不是多人共用雲端資料庫；瀏覽器資料清除可能導致紀錄遺失。</p></div></article><article class="panel entry-list-panel"><div class="panel-head"><h3 data-i18n="changeLog">最近修改紀錄</h3></div><div id="revisionTable" class="table-scroll"></div></article></section>
+        </div>
+
         <div id="view-overview" class="view active">
           <div class="section-head"><div><h2 data-i18n="overviewKpis">關鍵產效指標</h2><p data-i18n="overviewKpisSub">同期間加權比較，不將底加與成型產量相加。</p></div><span id="periodLabel" class="subtle"></span></div>
           <div class="kpi-grid" id="kpiGrid"></div>
