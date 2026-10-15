@@ -49,6 +49,8 @@ window.FACTORY_EN={
   "modelTitle": "Model output comparison",
   "modelSub": "Compare Stockfit and Assembly separately. Shared HC must not be used to infer model-specific productivity.",
   "modelCompare": "Regular-shift output by model",
+  "modelBenchmarkTitle": "Model historical-average comparison",
+  "modelBenchmarkSub": "Compare each model against its own pre-Day B production history for Stockfit and Assembly; minimum 3 records.",
   "modelCautionTitle": "Model productivity caution",
   "modelCaution": "BBB-1698 Pass 1 / Pass 2 is a two-pass process. Current records capture final completed pairs only; dividing one model's output by shared HC does not yield actual process efficiency.",
   "qualityTitle": "Quality & accountable supervisors",
