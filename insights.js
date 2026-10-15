@@ -211,5 +211,44 @@
       'info'));
     return `<div class="analysis-date">${esc(dateLabel)}</div>`+result.join('');
   }
-  window.FactoryInsightEngine={analyze,render};
+  function renderBenchmarks({state,dateA,dateB,esc,fmt,int}) {
+    const lang=state.lang;
+    const Lc=(zh,vn,en)=>L(lang,zh,vn,en);
+    const diag=analyze({state,a:{},b:{},dateA,dateB}).processes;
+    const gc=diag.find(p=>p.p==='gc').models,asm=diag.find(p=>p.p==='asm').models;
+    const map=new Map();
+    for(const [p,m] of [['gc',gc],['asm',asm]]){
+      for(const x of m.assessments){
+        const key=modelKey(x.model),row=map.get(key)||{model:x.model,gc:null,asm:null};
+        row[p]=x;map.set(key,row);
+      }
+    }
+    if(!map.size)return `<p class="model-benchmark-empty">${esc(Lc('B日沒有可分析的型體明細。','Không có dữ liệu mã giày ngày B.','No model details available for Day B.'))}</p>`;
+    const renderMetric=(x,complete,kind)=>{
+      if(!x)return '<td class="numeric">—</td><td class="numeric">—</td><td class="numeric">—</td>';
+      const sample=complete&&x.samples>=3&&x.change!==null;
+      const delta=sample?`${x.change>0?'+':''}${(x.change*100).toFixed(1)}%`:'—';
+      const cls=sample?(x.change<=-0.10?'bad':x.change>=0.10?'good':'neutral'):'neutral';
+      const title=sample?Lc(`前${x.samples}筆有效歷史資料`,`${x.samples} bản ghi lịch sử`,`${x.samples} historical records`):Lc('不足3筆有效歷史資料或當日型體資料未對齊','Dưới 3 bản ghi hoặc dữ liệu chưa khớp','Fewer than 3 prior records or incomplete daily model totals');
+      return `<td class="numeric">${int(x.actual)}</td><td class="numeric" title="${esc(title)}">${sample?fmt(x.avg,0):'—'}</td><td class="numeric"><span class="change ${cls}" title="${esc(title)}">${delta}</span></td>`;
+    };
+    const rows=[...map.values()].sort((a,b)=>{
+      const worst=x=>Math.min(...[x.gc&&gc.current.complete?x.gc.change:null,x.asm&&asm.current.complete?x.asm.change:null].filter(v=>v!==null).concat([1]));
+      return worst(a)-worst(b)||a.model.localeCompare(b.model);
+    });
+    const header=`<thead><tr><th>Model</th><th class="numeric">GCĐ B</th><th class="numeric">GCĐ ${esc(Lc('歷史均值','TB lịch sử','Historical avg'))}</th><th class="numeric">GCĐ Δ</th><th class="numeric">TH B</th><th class="numeric">TH ${esc(Lc('歷史均值','TB lịch sử','Historical avg'))}</th><th class="numeric">TH Δ</th></tr></thead>`;
+    const body=rows.map(r=>`<tr><td class="highlight">${esc(r.model)}</td>${renderMetric(r.gc,gc.current.complete,'gc')}${renderMetric(r.asm,asm.current.complete,'asm')}</tr>`).join('');
+    const warnings=[];
+    if(!gc.current.complete)warnings.push('GCĐ');
+    if(!asm.current.complete)warnings.push('TH');
+    const caution=warnings.length?Lc(
+      `${warnings.join('、')} B日型體明細未與日報正常班產量對齊，該製程暫不提供歷史均值判讀。`,
+      `Dữ liệu ngày B của ${warnings.join(', ')} chưa khớp tổng ca chính; chưa đánh giá theo trung bình lịch sử.`,
+      `Day B model totals for ${warnings.join(', ')} do not match the regular-shift daily report; historical comparisons are withheld for those processes.`):'';
+    const note=Lc('只使用B日前最近最多5筆同款正常班「有生產」紀錄，至少3筆才計算偏差。紅色代表低於歷史平均10%以上；歷史平均不是IE或排程目標。',
+      'Dùng tối đa 5 ngày sản xuất gần nhất trước ngày B, tối thiểu 3 ngày. Màu đỏ: thấp hơn TB lịch sử trên 10%; không phải mục tiêu IE hoặc kế hoạch.',
+      'Uses up to 5 prior active production records before Day B (minimum 3). Red indicates more than 10% below historical average; this is not an IE or schedule target.');
+    return `<table class="data-table model-benchmark-table">${header}<tbody>${body}</tbody></table><p class="model-benchmark-note">${esc(note)}${caution?`<strong>${esc(caution)}</strong>`:''}</p>`;
+  }
+  window.FactoryInsightEngine={analyze,render,renderBenchmarks};
 })(window);
