@@ -60,7 +60,7 @@
   set('[data-t="benchmarkActual"]',tr('actual'));set('[data-t="benchmarkAchievement"]',tr('achievement'));
   set('[data-t="benchmarkDifference"]',tr('difference'));
  }
- const numeric=id=>{const value=$(id)?.value||'';return /^\\d+$/.test(value)?Number(value):null;};
+ const numeric=id=>{const value=$(id)?.value||'';return /^\d+$/.test(value)?Number(value):null;};
  const codes=()=>[...document.querySelectorAll('[data-field="modelCode"]')].map(el=>el.value.trim().toUpperCase()).filter(Boolean).sort();
  function render(){
   const box=$('benchmark');if(!box)return;
