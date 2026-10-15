@@ -12,7 +12,7 @@
   if(pill){pill.textContent='Supabase: '+message;pill.dataset.state=kind;}
   if(db)db.textContent=message;
   const box=$('message');
-  if(box){if(kind==='error'){box.textContent='雲端資料讀取失敗：'+message+'。為避免誤判，不會改用本機舊資料。';box.classList.remove('hidden');box.classList.add('error');}
+  if(box){if(kind==='error'){const stale=lastSuccess?' 畫面保留上次成功同步於 '+new Date(lastSuccess).toLocaleString()+' 的雲端資料，請勿視為最新。':' 不會顯示本機舊資料冒充雲端。';box.textContent='雲端資料讀取失敗：'+message+'。'+stale;box.classList.remove('hidden');box.classList.add('error');}
    else{box.classList.add('hidden');box.classList.remove('error');}}
  }
  function transform(rows){
