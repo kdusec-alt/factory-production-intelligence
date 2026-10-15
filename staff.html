@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="staff.css">
   <script src="cloud-config.js" defer></script>
   <script src="staff.js" defer></script>
+  <script src="nby-benchmark.js" defer></script>
 </head>
 <body>
   <main class="shell">
@@ -16,8 +17,8 @@
     <section class="hero"><div class="eyebrow" data-t="tag">BÁO CÁO SẢN XUẤT</div><h1 data-t="title">Nhập số liệu hằng ngày</h1><p data-t="subtitle">Chọn chuyền, nhập sản lượng và nhân lực, sau đó nhấn Lưu. Không cần Excel hay GitHub.</p></section>
     <div id="status" class="status pending" role="status" aria-live="polite"><span class="status-icon">●</span><span id="statusText" data-t="connecting">Đang kiểm tra kết nối…</span></div>
     <form id="reportForm" novalidate>
-      <section class="panel"><div class="panel-head"><span class="step">01</span><div><h2 data-t="locationTitle">Thông tin sản xuất</h2><p data-t="locationDesc">Chọn ngày, xưởng và chuyền sản xuất</p></div></div>
-        <div class="fields three"><label><span data-t="date">Ngày sản xuất</span><input id="date" type="date" required></label><label><span data-t="factory">Xưởng</span><select id="factory" required><option value="A">Xưởng A</option><option value="B">Xưởng B</option><option value="C">Xưởng C</option><option value="D">Xưởng D</option></select></label><label><span data-t="line">Chuyền</span><select id="line" required></select></label></div>
+      <section class="panel"><div class="panel-head"><span class="step">01</span><div><h2 data-t="locationTitle">Thông tin sản xuất</h2><p data-t="locationDesc">Chọn ngày, tòa nhà và chuyền sản xuất</p></div></div>
+        <div class="fields four"><label><span data-t="date">Ngày sản xuất</span><input id="date" type="date" required></label><label><span data-t="plant">Nhà máy</span><input id="plant" value="NBY" readonly aria-readonly="true"></label><label><span data-t="factory">Tòa nhà</span><select id="factory" required><option value="A">Tòa A</option><option value="B">Tòa B</option><option value="C">Tòa C</option><option value="D">Tòa D</option></select></label><label><span data-t="line">Chuyền</span><select id="line" required></select></label></div>
         <div class="fields two"><label><span data-t="process">Công đoạn</span><select id="process" required><option value="gc">Stockfit / GCĐ (底加)</option><option value="asm">Assembly / TH (成型)</option></select></label><label><span data-t="operator">Người nhập liệu</span><input id="operator" type="text" maxlength="80" autocomplete="name" required placeholder="VD: Nguyễn Văn A"></label></div>
       </section>
       <section class="panel"><div class="panel-head"><span class="step">02</span><div><h2 data-t="outputTitle">Sản lượng và nhân lực</h2><p data-t="outputDesc">Nhập tổng số đôi đã hoàn thành và số người làm ca chính</p></div></div>
@@ -25,6 +26,7 @@
         <fieldset class="ot-group"><legend data-t="otQuestion">Hôm nay có tăng ca (OT) không?</legend><div class="choice-row"><label><input type="radio" name="otMode" value="none" required><span data-t="otNone">Không OT</span></label><label><input type="radio" name="otMode" value="yes"><span data-t="otYes">Có OT</span></label><label><input type="radio" name="otMode" value="unknown"><span data-t="otUnknown">Chưa có số liệu OT</span></label></div></fieldset>
         <div class="fields three" id="otFields" hidden><label><span data-t="otPairs">Số đôi hoàn thành OT</span><input id="otPairs" type="number" min="0" max="20000" step="1" inputmode="numeric"></label><label><span data-t="otHC">Nhân lực OT</span><input id="otHC" type="number" min="1" max="1000" step="1" inputmode="numeric"></label><label><span data-t="otHours">Số giờ OT</span><input id="otHours" type="number" min="0.5" max="16" step="0.5" inputmode="decimal"></label></div>
         <div id="preview" class="preview" aria-live="polite"><span data-t="previewTitle">Hiệu suất 8H dự kiến</span><strong>—</strong><small data-t="previewHelp">Nhập đủ sản lượng, HC và trạng thái OT để tính.</small></div>
+        <div id="benchmark" class="benchmark neutral" aria-live="polite"><div class="benchmark-head"><span data-t="benchmarkTitle">Sản lượng dự kiến theo dữ liệu trước đây</span><span id="benchmarkTag" class="benchmark-tag" data-t="benchmarkLoading">Đang tính…</span></div><div class="benchmark-values"><div><small data-t="benchmarkExpected">Sản lượng 8H dự kiến</small><strong id="benchmarkExpected">—</strong></div><div><small data-t="benchmarkAchievement">Tỷ lệ đạt</small><strong id="benchmarkAchievement">—</strong></div><div><small data-t="benchmarkDifference">Chênh lệch</small><strong id="benchmarkDifference">—</strong></div></div><p id="benchmarkDetail" class="benchmark-detail" data-t="benchmarkHelp">So sánh với năng suất lịch sử theo người-giờ. Chưa có đủ dữ liệu sẽ không tự đặt mục tiêu.</p></div>
       </section>
       <section class="panel"><div class="panel-head"><span class="step">03</span><div><h2 data-t="modelTitle">Mã giày sản xuất</h2><p data-t="modelDesc">Một chuyền có nhiều mã giày? Nhấn Thêm mã giày.</p></div></div>
         <div id="models" class="models"></div><button id="addModel" type="button" class="secondary" data-t="addModel">＋ Thêm mã giày</button><p class="hint" data-t="modelHint">Tổng số đôi theo mã phải bằng tổng sản lượng ở trên. Có thể nhập mã mới.</p>
