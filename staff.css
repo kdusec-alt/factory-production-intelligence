@@ -17,3 +17,12 @@
 .benchmark.high{border-color:#b8dbcd;background:#f1fbf6}.benchmark.high .benchmark-tag{background:#d9f6e6;color:#176348}
 @media(max-width:750px){.fields.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:410px){.benchmark-values{grid-template-columns:1fr 1fr}.benchmark-values>div:first-child{grid-column:span 2}}
+
+/* V1.9: visible three-language selector and neutral 8H intelligence summary */
+select#lang{width:auto;min-width:135px;max-width:185px;min-height:42px;padding:8px 12px}
+.benchmark-values{grid-template-columns:repeat(4,minmax(0,1fr))}
+.benchmark-values strong{font-size:19px}
+.benchmark-insight{font-size:14px;line-height:1.65;font-weight:700;color:#263f62;margin:15px 0 8px}
+.benchmark.ready,.benchmark.low,.benchmark.high{background:#f8fbff;border-color:#d9e4f2}
+@media(max-width:690px){.benchmark-values{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:410px){.benchmark-values>div:first-child{grid-column:auto}}
