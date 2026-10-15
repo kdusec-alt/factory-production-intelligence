@@ -8,12 +8,12 @@
   <title>Nhập báo cáo sản xuất · Factory Intelligence</title>
   <link rel="stylesheet" href="staff.css">
   <script src="cloud-config.js" defer></script>
-  <script src="staff.js?v=18" defer></script>
-  <script src="nby-benchmark.js?v=18" defer></script>
+  <script src="staff.js?v=19" defer></script>
+  <script src="nby-benchmark.js?v=19" defer></script>
 </head>
 <body>
   <main class="shell">
-    <header class="top"><div class="logo">F<span>·</span></div><div class="brand"><strong>FACTORY INTELLIGENCE</strong><small>DAILY PRODUCTION REPORT</small></div><button type="button" id="lang" class="lang">中文</button></header>
+    <header class="top"><div class="logo">F<span>·</span></div><div class="brand"><strong>FACTORY INTELLIGENCE</strong><small>DAILY PRODUCTION REPORT</small></div><select id="lang" class="lang" aria-label="Language / Ngôn ngữ / 語言"><option value="vi">Tiếng Việt</option><option value="zh">繁體中文</option><option value="en">English</option></select></header>
     <section class="hero"><div class="eyebrow" data-t="tag">BÁO CÁO SẢN XUẤT</div><h1 data-t="title">Nhập số liệu hằng ngày</h1><p data-t="subtitle">Chọn công đoạn NBY, nhập sản lượng và nhân lực, sau đó nhấn Lưu. Không cần Excel hay GitHub.</p></section>
     <div id="status" class="status pending" role="status" aria-live="polite"><span class="status-icon">●</span><span id="statusText" data-t="connecting">Đang kiểm tra kết nối…</span></div>
     <form id="reportForm" novalidate>
@@ -26,9 +26,9 @@
         <fieldset class="ot-group"><legend data-t="otQuestion">Hôm nay có tăng ca (OT) không?</legend><div class="choice-row"><label><input type="radio" name="otMode" value="none" required><span data-t="otNone">Không OT</span></label><label><input type="radio" name="otMode" value="yes"><span data-t="otYes">Có OT</span></label><label><input type="radio" name="otMode" value="unknown"><span data-t="otUnknown">Chưa có số liệu OT</span></label></div></fieldset>
         <div class="fields three" id="otFields" hidden><label><span data-t="otPairs">Số đôi hoàn thành OT</span><input id="otPairs" type="number" min="0" max="20000" step="1" inputmode="numeric"></label><label><span data-t="otHC">Nhân lực OT</span><input id="otHC" type="number" min="1" max="1000" step="1" inputmode="numeric"></label><label><span data-t="otHours">Số giờ OT</span><input id="otHours" type="number" min="0.5" max="16" step="0.5" inputmode="decimal"></label></div>
         <div id="preview" class="preview" aria-live="polite"><span data-t="previewTitle">Hiệu suất 8H dự kiến</span><strong>—</strong><small data-t="previewHelp">Nhập đủ sản lượng, HC và trạng thái OT để tính.</small></div>
-        <div id="benchmark" class="benchmark neutral" aria-live="polite"><div class="benchmark-head"><span data-t="benchmarkTitle">Sản lượng dự kiến theo dữ liệu trước đây</span><span id="benchmarkTag" class="benchmark-tag" data-t="benchmarkLoading">Đang tính…</span></div><div class="benchmark-values"><div><small data-t="benchmarkExpected">Sản lượng 8H dự kiến</small><strong id="benchmarkExpected">—</strong></div><div><small data-t="benchmarkAchievement">Tỷ lệ đạt</small><strong id="benchmarkAchievement">—</strong></div><div><small data-t="benchmarkDifference">Chênh lệch</small><strong id="benchmarkDifference">—</strong></div></div><p id="benchmarkDetail" class="benchmark-detail" data-t="benchmarkHelp">So sánh với năng suất lịch sử theo người-giờ. Chưa có đủ dữ liệu sẽ không tự đặt mục tiêu.</p></div>
+        <div id="benchmark" class="benchmark neutral" aria-live="polite"><div class="benchmark-head"><span data-t="benchmarkTitle">Sản lượng dự kiến theo dữ liệu trước đây</span><span id="benchmarkTag" class="benchmark-tag" data-t="benchmarkLoading">Đang tính…</span></div><div class="benchmark-values"><div><small data-t="benchmarkExpected">Mốc tham chiếu 8H</small><strong id="benchmarkExpected">—</strong></div><div><small data-t="benchmarkActual">Sản lượng quy đổi 8H</small><strong id="benchmarkActual8h">—</strong></div><div><small data-t="benchmarkAchievement">Tỷ lệ so với mốc</small><strong id="benchmarkAchievement">—</strong></div><div><small data-t="benchmarkDifference">Chênh lệch 8H</small><strong id="benchmarkDifference">—</strong></div></div><p id="benchmarkInsight" class="benchmark-insight" aria-live="polite">Đang chờ dữ liệu để phân tích tự động.</p><p id="benchmarkDetail" class="benchmark-detail" data-t="benchmarkHelp">Mốc 8H = năng suất lịch sử theo người-giờ × HC × 8. Không tính sản lượng OT.</p></div>
       </section>
-      <section class="panel"><div class="panel-head"><span class="step">03</span><div><h2 data-t="modelTitle">Mã giày sản xuất</h2><p data-t="modelDesc">Một chuyền có nhiều mã giày? Nhấn Thêm mã giày.</p></div></div>
+      <section class="panel"><div class="panel-head"><span class="step">03</span><div><h2 data-t="modelTitle">Mã giày sản xuất</h2><p data-t="modelDesc">Một công đoạn có nhiều mã giày? Nhấn Thêm mã giày.</p></div></div>
         <div id="models" class="models"></div><button id="addModel" type="button" class="secondary" data-t="addModel">＋ Thêm mã giày</button><p class="hint" data-t="modelHint">Tổng số đôi theo mã phải bằng tổng sản lượng ở trên. Có thể nhập mã mới.</p>
         <label class="notes"><span data-t="note">Ghi chú (không bắt buộc)</span><textarea id="note" rows="2" maxlength="500" placeholder="WIP, máy móc, sửa hàng…"></textarea></label>
       </section>
