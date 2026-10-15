@@ -123,13 +123,15 @@
    const body={action:'import_excel',payload,filenames};
    const bytes=new TextEncoder().encode(JSON.stringify(body)).length;
    if(bytes>1400000)throw new Error('匯入資料超過 1.4 MB，請分批匯入');
+   feedback('Excel 正在上傳雲端…');
    announce('正在儲存至雲端，請勿關閉頁面…');
    const result=await post(body,45000);
    const refreshed=await refresh();
    const note='Excel 已寫入雲端：'+result.daily_count+' 個生產日、'+result.model_count+' 筆型體、'+result.quality_count+' 筆品質資料。';
    if(!refreshed){announce(note+' 儲存已成功，但畫面重新讀取失敗，請稍後按「更新雲端」。',true);return;}
    announce(note+' 所有主管重新開啟頁面即可看到，已開啟頁面最多五分鐘自動更新。');
-  }finally{if(input)input.disabled=false;}
+  }catch(error){feedback('Excel 匯入失敗：'+String(error.message||error),'error');throw error;}
+  finally{if(input)input.disabled=false;}
  }
  async function createViewer(){
   if(!isAdmin)return;
