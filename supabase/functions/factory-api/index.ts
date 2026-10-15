@@ -91,36 +91,13 @@ Deno.serve(async (request:Request)=>{
  const action=body.action;
  if(action==='health')return send(200,{ok:true,role:isAdmin?'admin':'staff'},origin);
  if(action==='benchmark'){
-  const date=body.production_date,factory=body.factory,line=body.line,process=body.process,models=body.models;
-  if(!validDate(date)||!['A','B','C','D'].includes(String(factory))||typeof line!=='string'||!new RegExp('^'+factory+'0[1-'+(factory==='D'?6:7)+']
-  if(!isStaff&&!isAdmin)return send(403,{error:'Write not permitted'},origin);
-  let record:Record<string,unknown>;
-  try{record=validate(body.record);}catch(e){return send(422,{error:String((e as Error).message)},origin);}
-  const expected=body.expected_revision===undefined?null:body.expected_revision;
-  if(expected!==null&&!isInt(expected,1,1_000_000))return send(422,{error:'Invalid expected revision'},origin);
-  const {data,error}=await supabase.rpc('save_factory_entry',{p_record:record,p_expected_revision:expected});
-  if(error){
-   const match=String(error.message||'').match(/REVISION_CONFLICT:(\d+)/);
-   if(match)return send(409,{error:'This report already exists or has changed',revision:Number(match[1])},origin);
-   console.error('DB error',error.code);return send(500,{error:'Could not save report. Contact manager.'},origin);
-  }
-  return send(200,{ok:true,id:data.id,revision:data.revision,saved_at:data.updated_at,production_date:data.production_date,plant:'NBY',line:data.line},origin);
- }
- if(action==='list'){
-  if(!isAdmin)return send(403,{error:'Manager access required'},origin);
-  const from=body.date_from,to=body.date_to;
-  if(!validDate(from)||!validDate(to)||String(from)>String(to))return send(422,{error:'Invalid date range'},origin);
-  const {data,error}=await supabase.from('production_entries').select('plant,production_date,factory,line,process,operator_name,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,notes,revision,updated_at').gte('production_date',from).lte('production_date',to).order('production_date',{ascending:false}).limit(2000);
-  if(error){console.error('List error',error.code);return send(500,{error:'Cannot load reports'},origin);}
-  return send(200,{ok:true,rows:data||[],truncated:(data||[]).length===2000},origin);
- }
- return send(400,{error:'Unknown action'},origin);
-});
-).test(line)||!['gc','asm'].includes(String(process)))
+  const date=body.production_date,factory=String(body.factory||''),line=String(body.line||''),process=String(body.process||''),models=body.models;
+  const lineNum=Number(line.slice(1));
+  if(!validDate(date)||!['A','B','C','D'].includes(factory)||line.length!==3||line[0]!==factory||line[1]!=='0'||!Number.isInteger(lineNum)||lineNum<1||lineNum>(factory==='D'?6:7)||!['gc','asm'].includes(process))
    return send(422,{error:'Invalid benchmark selection'},origin);
-  if(!Array.isArray(models)||models.length>20||models.some(x=>typeof x!=='string'||x.length>70||!/^[A-Z0-9._+\-/ ]+$/.test(x)))
+  if(!Array.isArray(models)||models.length>20||models.some(x=>typeof x!=='string'||x.length>70))
    return send(422,{error:'Invalid model selection'},origin);
-  try{return send(200,await benchmark(supabase,String(date),String(factory),line,String(process),[...new Set(models)].sort()),origin);}
+  try{return send(200,await benchmark(supabase,String(date),factory,line,process,[...new Set(models)].sort()),origin);}
   catch(e){console.error('Benchmark error');return send(500,{error:'Cannot calculate benchmark'},origin);}
  }
  if(action==='save'){
@@ -135,7 +112,7 @@ Deno.serve(async (request:Request)=>{
    if(match)return send(409,{error:'This report already exists or has changed',revision:Number(match[1])},origin);
    console.error('DB error',error.code);return send(500,{error:'Could not save report. Contact manager.'},origin);
   }
-  return send(200,{ok:true,id:data.id,revision:data.revision,saved_at:data.updated_at,production_date:data.production_date,line:data.line},origin);
+  return send(200,{ok:true,id:data.id,revision:data.revision,saved_at:data.updated_at,production_date:data.production_date,plant:'NBY',line:data.line},origin);
  }
  if(action==='list'){
   if(!isAdmin)return send(403,{error:'Manager access required'},origin);
