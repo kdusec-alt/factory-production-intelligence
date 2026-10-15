@@ -1,5 +1,5 @@
 'use strict';
-/* V1.16 — IE manual-work-content HC ↔ output planner.
+/* V1.16 — IE manual-work-content 人員 ↔ output planner.
  * Seconds = sum of human work-content across stations per pair; NOT line takt.
  * Scenario values are estimates, never approved staffing/production targets.
  * This module is read-only and never mutates cloud or daily production records. */
@@ -19,7 +19,7 @@
    .sort((a,b)=>String(b.effectiveDate||'').localeCompare(String(a.effectiveDate||'')))[0]||null;
  };
  function workload(p,day){
-  const hours=n(day?.[p+'Hours']),dayPairs=n(day?.[p+'Normal']),hc=n(day?.[p+'HC']);
+  const hours=n(day?.[p+'Hours']),dayPairs=n(day?.[p+'Normal']),hc=n(day?.[p+'人員']);
   const ms=state.models.filter(m=>m.date===day?.date);
   let pairsKnown=0,seconds=0;const unknown=[],missingIE=[],invalid=[];
   for(const m of ms){
@@ -78,24 +78,24 @@
   const title=p==='gc'?'Stockfit / GCĐ':'Assembly / TH';
   if(!s.valid)return '<small>'+title+' · '+labelStatus(s)+'</small><b>—</b><p>'+safe(s.reasons.join('；'))+'</p>';
   const eff=s.history.eff;
-  const headline=eff?integer(s.reasonable)+' HC':integer(s.ideal)+' HC*';
-  const sub=eff?L('合理HC・歷史效率','HC ước tính · hiệu suất lịch sử','Estimated HC · historical efficiency')+' '+decimal(eff*100,1)+'% ('+integer(s.history.samples)+L('天',' ngày',' days')+')':
-   L('100%理論人力下限*；尚無可靠歷史效率','Mức HC tối thiểu ở 100%*; chưa đủ hiệu suất lịch sử','100% theoretical minimum*; no reliable historical efficiency');
+  const headline=eff?integer(s.reasonable)+' 人員':integer(s.ideal)+' 人員*';
+  const sub=eff?L('合理人員・歷史效率','人員 ước tính · hiệu suất lịch sử','Estimated 人員 · historical efficiency')+' '+decimal(eff*100,1)+'% ('+integer(s.history.samples)+L('天',' ngày',' days')+')':
+   L('100%理論人力下限*；尚無可靠歷史效率','Mức 人員 tối thiểu ở 100%*; chưa đủ hiệu suất lịch sử','100% theoretical minimum*; no reliable historical efficiency');
   const cap=s.capacity!==null?integer(s.capacity)+' '+L('雙','đôi','pairs'):
    s.hc!==null?integer(Math.floor(s.hc*s.hours*3600*.8/s.avgSeconds))+'–'+integer(Math.floor(s.hc*s.hours*3600*.9/s.avgSeconds))+' '+L('雙（80–90%情境）','đôi (giả định 80–90%)','pairs (80–90% scenario)'):'—';
   return '<small>'+title+' · '+labelStatus(s)+'</small><b>'+headline+'</b><p>'+sub+'</p>'+
    '<p>'+L('實績','Thực tế','Actual')+' '+integer(s.dayPairs)+' '+L('雙','đôi','pairs')+
-   ' · '+L('100%理論HC','HC lý thuyết 100%','100% theoretical HC')+' '+integer(s.ideal)+
-   ' · '+L('實際HC','HC thực tế','Actual HC')+' '+(s.hc===null?'—':decimal(s.hc,0))+'</p>'+
-   '<p>'+L('以現有HC推估產量','Sản lượng ước tính theo HC hiện có','Estimated output with actual HC')+'：'+cap+'</p>'+
+   ' · '+L('100%理論人員','人員 lý thuyết 100%','100% theoretical 人員')+' '+integer(s.ideal)+
+   ' · '+L('實際人員','人員 thực tế','Actual 人員')+' '+(s.hc===null?'—':decimal(s.hc,0))+'</p>'+
+   '<p>'+L('以現有人員推估產量','Sản lượng ước tính theo 人員 hiện có','Estimated output with actual 人員')+'：'+cap+'</p>'+
    (s.provisional?'<p class="ie-plan-warning">'+safe(s.reasons.join('；'))+'</p>':'');
  }
  const metric=(title,value,small)=>'<div class="ie-plan-metric"><small>'+title+'</small><strong>'+value+'</strong>'+(small?'<span>'+small+'</span>':'')+'</div>';
  function makeCard(p,s){
   const name=p==='gc'?'Stockfit / GCĐ':'Assembly / TH',eff=s.history.eff;
   const vHC=s.hc===null?'':String(s.hc),vPairs=positive(s.dayPairs)?String(s.dayPairs):'';
-  const theoretical=s.valid?integer(s.ideal)+' HC':'—';
-  const historyHC=s.valid&&eff?integer(s.reasonable)+' HC':'—';
+  const theoretical=s.valid?integer(s.ideal)+' 人員':'—';
+  const historyHC=s.valid&&eff?integer(s.reasonable)+' 人員':'—';
   const target=s.valid&&eff?integer(s.capacity)+' '+L('雙','đôi','pairs'):'—';
   const note=!s.valid?s.reasons.join('；'):
    eff?L('採用過往','Dùng','Based on ')+integer(s.history.samples)+L('個完整歷史日的中位數效率',' ngày hợp lệ, hiệu suất trung vị',' complete historical days (median efficiency)')+' '+decimal(eff*100,1)+'%':
@@ -105,13 +105,13 @@
   return '<section class="ie-plan-card" data-ie-process="'+p+'">'+
    '<div class="ie-plan-card-head"><h4>'+name+'</h4><span>'+labelStatus(s)+'</span></div>'+
    '<div class="ie-plan-metrics">'+
-    metric(L('IE 100%理論HC','HC lý thuyết 100%','100% theoretical HC'),theoretical,L('依當日實際雙數','Theo sản lượng thực tế','For actual output'))+
-    metric(L('IE推估合理HC','HC ước tính','Estimated reasonable HC'),historyHC,eff?decimal(eff*100,1)+'%':'—')+
-    metric(L('實際正常班HC','HC ca chính thực tế','Actual regular-shift HC'),s.hc===null?'—':decimal(s.hc,0)+' HC','')+
-    metric(L('現有人數參考產量','Sản lượng tham chiếu','Reference output with actual HC'),target,eff?L('同型體比例','Cùng cơ cấu mã','Same model mix'):'')+
+    metric(L('IE 100%理論人員','人員 lý thuyết 100%','100% theoretical 人員'),theoretical,L('依當日實際雙數','Theo sản lượng thực tế','For actual output'))+
+    metric(L('IE推估合理人員','人員 ước tính','Estimated reasonable 人員'),historyHC,eff?decimal(eff*100,1)+'%':'—')+
+    metric(L('實際正常班人員','人員 ca chính thực tế','Actual regular-shift 人員'),s.hc===null?'—':decimal(s.hc,0)+' 人員','')+
+    metric(L('現有人數參考產量','Sản lượng tham chiếu','Reference output with actual 人員'),target,eff?L('同型體比例','Cùng cơ cấu mã','Same model mix'):'')+
    '</div>'+
    '<div class="ie-plan-inputs">'+
-    '<label><span>'+L('投入人數 HC（可修改試算）','Nhân lực HC (có thể chỉnh)','Available HC (editable)')+'</span><input type="number" min="1" max="20000" step="1" inputmode="numeric" data-ie-input="hc" data-ie-process="'+p+'" value="'+safe(vHC)+'" placeholder="HC"></label>'+
+    '<label><span>'+L('投入人數 人員（可修改試算）','Nhân lực 人員 (có thể chỉnh)','Available 人員 (editable)')+'</span><input type="number" min="1" max="20000" step="1" inputmode="numeric" data-ie-input="hc" data-ie-process="'+p+'" value="'+safe(vHC)+'" placeholder="人員"></label>'+
     '<label><span>'+L('目標8H雙數（可修改試算）','Số đôi mục tiêu ca 8H','Target 8H pairs (editable)')+'</span><input type="number" min="1" max="1000000" step="1" inputmode="numeric" data-ie-input="pairs" data-ie-process="'+p+'" value="'+safe(vPairs)+'" placeholder="'+L('雙數','Đôi','Pairs')+'"></label>'+
    '</div><div class="ie-plan-answer" id="ie-plan-result-'+p+'"></div>'+
    '<p class="ie-plan-context">'+safe(note)+'</p>'+
@@ -123,18 +123,18 @@
  }
  function updateAnswers(p){
   const s=current[p],box=id('ie-plan-result-'+p);if(!box||!s)return;
-  if(!s.valid){box.textContent=L('請先補齊IE與正常班型體資料，避免使用錯誤的HC或產量推估。','Cần bổ sung IE và dữ liệu mã giày ca chính.','Complete IE and regular-shift model data before estimating HC/output.');return;}
+  if(!s.valid){box.textContent=L('請先補齊IE與正常班型體資料，避免使用錯誤的人員或產量推估。','Cần bổ sung IE và dữ liệu mã giày ca chính.','Complete IE and regular-shift model data before estimating 人員/output.');return;}
   const hc=n(sessions[p]?.hc),pairs=n(sessions[p]?.pairs),eff=s.history.eff;
   const blocks=[];
   if(positive(pairs)&&Number.isInteger(pairs)){
    const work=pairs*s.avgSeconds;
    const ideal=Math.ceil(work/(s.hours*3600));
    let rhs='';
-   if(eff){rhs=L('歷史效率合理HC','HC theo hiệu suất lịch sử','History-based HC')+' <strong>'+integer(Math.ceil(work/(s.hours*3600*eff)))+' HC</strong>';}
-   else rhs=L('80–90%假設HC','HC giả định 80–90%','80–90% scenario HC')+' <strong>'+
-    integer(Math.ceil(work/(s.hours*3600*.9)))+'–'+integer(Math.ceil(work/(s.hours*3600*.8)))+' HC</strong>';
+   if(eff){rhs=L('歷史效率合理人員','人員 theo hiệu suất lịch sử','History-based 人員')+' <strong>'+integer(Math.ceil(work/(s.hours*3600*eff)))+' 人員</strong>';}
+   else rhs=L('80–90%假設人員','人員 giả định 80–90%','80–90% scenario 人員')+' <strong>'+
+    integer(Math.ceil(work/(s.hours*3600*.9)))+'–'+integer(Math.ceil(work/(s.hours*3600*.8)))+' 人員</strong>';
    blocks.push('<div><span>'+L('生產','Sản xuất','To produce')+' <strong>'+integer(pairs)+' '+L('雙','đôi','pairs')+'</strong> → </span>'+rhs+
-    '<small>'+L('100%理論下限','Tối thiểu lý thuyết 100%','100% theoretical minimum')+' '+integer(ideal)+' HC</small></div>');
+    '<small>'+L('100%理論下限','Tối thiểu lý thuyết 100%','100% theoretical minimum')+' '+integer(ideal)+' 人員</small></div>');
   }
   if(positive(hc)&&Number.isInteger(hc)){
    const max=Math.floor(hc*s.hours*3600/s.avgSeconds);
@@ -143,11 +143,11 @@
     integer(Math.floor(hc*s.hours*3600*eff/s.avgSeconds))+' '+L('雙','đôi','pairs')+'</strong>';
    else rhs=L('80–90%情境產量','Sản lượng giả định 80–90%','80–90% scenario output')+' <strong>'+
     integer(Math.floor(hc*s.hours*3600*.8/s.avgSeconds))+'–'+integer(Math.floor(hc*s.hours*3600*.9/s.avgSeconds))+' '+L('雙','đôi','pairs')+'</strong>';
-   blocks.push('<div><span>'+L('投入','Nhân lực','With')+' <strong>'+integer(hc)+' HC</strong> → </span>'+rhs+
+   blocks.push('<div><span>'+L('投入','Nhân lực','With')+' <strong>'+integer(hc)+' 人員</strong> → </span>'+rhs+
     '<small>'+L('100%理論產量上限','Sản lượng tối đa lý thuyết 100%','100% theoretical labor-only ceiling')+' '+integer(max)+' '+L('雙','đôi','pairs')+'</small></div>');
   }
   box.innerHTML=blocks.length?blocks.join(''):
-   L('輸入人數或目標雙數，系統會立即雙向計算。','Nhập HC hoặc số đôi mục tiêu để tính ngay.','Enter HC or target pairs for immediate two-way estimates.');
+   L('輸入人數或目標雙數，系統會立即雙向計算。','Nhập 人員 hoặc số đôi mục tiêu để tính ngay.','Enter 人員 or target pairs for immediate two-way estimates.');
  }
  function renderPlanner(){
   const compare=periods().compare,summary=id('ieMixSummary');
@@ -168,10 +168,10 @@
   current={gc:derive('gc',day),asm:derive('asm',day)};
   const cards=summary.querySelectorAll('.ie-summary-card');
   if(cards.length>=2){cards[0].innerHTML=makeSummary(current.gc,'gc');cards[1].innerHTML=makeSummary(current.asm,'asm');}
-  holder.innerHTML='<div class="ie-plan-heading"><h4>'+L('IE合理人力 × 8H產量雙向試算','Mô phỏng HC × sản lượng 8H theo IE','IE HC × 8H output planner')+'</h4>'+
-   '<p>'+L('直接修改HC或目標雙數，即時計算；預設取當日日報。效率由歷史資料自動推估，沒有歷史效率就顯示情境區間。',
-    'Sửa HC hoặc số đôi mục tiêu để tính ngay; mặc định dùng dữ liệu ngày. Hiệu suất lấy từ lịch sử, thiếu thì hiển thị khoảng giả định.',
-    'Change HC or target pairs to recalculate instantly. Defaults to daily actuals; efficiency comes from validated history or labeled scenarios.')+'</p></div>'+
+  holder.innerHTML='<div class="ie-plan-heading"><h4>'+L('IE合理人力 × 8H產量雙向試算','Mô phỏng 人員 × sản lượng 8H theo IE','IE 人員 × 8H output planner')+'</h4>'+
+   '<p>'+L('直接修改人員或目標雙數，即時計算；預設取當日日報。效率由歷史資料自動推估，沒有歷史效率就顯示情境區間。',
+    'Sửa 人員 hoặc số đôi mục tiêu để tính ngay; mặc định dùng dữ liệu ngày. Hiệu suất lấy từ lịch sử, thiếu thì hiển thị khoảng giả định.',
+    'Change 人員 or target pairs to recalculate instantly. Defaults to daily actuals; efficiency comes from validated history or labeled scenarios.')+'</p></div>'+
    '<div class="ie-plan-grid">'+makeCard('gc',current.gc)+makeCard('asm',current.asm)+'</div>'+
    '<p class="ie-plan-caution">'+L('注意：此為人工工作量與相同型體比例的線性推估，尚未包含線平衡、瓶頸、Pass 1/2、返修、等待與設備限制；不得直接作為裁員或正式產能承諾。',
     'Lưu ý: ước tính tuyến tính theo giờ công và cơ cấu mã giày; chưa tính cân bằng chuyền, nút thắt, Pass 1/2, sửa hàng và dừng chờ. Không dùng làm định biên chính thức.',
