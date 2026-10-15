@@ -14,6 +14,8 @@
   <script src="records.js?v=115" defer></script>
   <script src="ie.js?v=115" defer></script>
   <script src="ie-planner.js?v=116" defer></script>
+  <script src="ie-kpi-core.js?v=118" defer></script>
+  <script src="ie-kpi-dashboard.js?v=118" defer></script>
   <script src="cloud.js?v=113" defer></script>
   <script src="cloud-config.js" defer></script>
   <script src="cloud-dashboard.js?v=1152" defer></script>
@@ -110,6 +112,7 @@
         <div id="view-overview" class="view active">
           <div class="section-head"><div><h2 data-i18n="overviewKpis">關鍵產效指標</h2><p data-i18n="overviewKpisSub">同期間加權比較，不將底加與成型產量相加。</p></div><span id="periodLabel" class="subtle"></span></div>
           <div class="kpi-grid" id="kpiGrid"></div>
+          <article class="panel" id="ieKpiPanel" aria-label="IE productivity indicators"></article>
           <div class="two-cols"><article class="panel"><div class="panel-head"><div><h3 data-i18n="compareTitle">A日與B日產效比較</h3><p data-i18n="compareDesc">正常班日均產量、人員及人時產出</p></div><span class="tag">8H</span></div><div id="comparisonTable"></div></article><article class="panel insight-panel"><div class="panel-head"><div><h3 id="insight-panel-heading" data-i18n="analysisTitle">自動管理判讀</h3><p data-i18n="analysisDesc">根據資料計算的觀察重點，不自動推定根因</p></div><div class="insight-panel-meta"><span class="tag muted">AUTO INSIGHT</span><span class="insight-scroll-hint" data-i18n="insightScrollHint">↕ 向下捲動查看完整分析</span></div></div><div id="insights" class="insights" role="region" aria-labelledby="insight-panel-heading" tabindex="0"></div></article></div>
           <article class="panel chart-panel"><div class="panel-head"><div><h3 data-i18n="recentTrend">近期每日產出</h3><p data-i18n="trendCaption">以8H正常班完成產量呈現，單位：雙</p></div><span class="chart-legend"><i class="dot gc"></i>Stockfit <i class="dot asm"></i>Assembly</span></div><div id="miniChart" class="chart"></div></article>
         </div>
