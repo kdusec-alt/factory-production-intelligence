@@ -7,18 +7,19 @@
  const key=x=>String(x||'').trim().toUpperCase();
  const number=(x,d=1)=>Number.isFinite(x)?x.toLocaleString(state.lang==='vn'?'vi-VN':state.lang==='en'?'en-US':'zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
  const standard=(model,date)=>(state.ieStandards||[]).filter(x=>key(x.model)===key(model)&&(!x.effectiveDate||x.effectiveDate<=date)).sort((a,b)=>String(b.effectiveDate||'').localeCompare(String(a.effectiveDate||'')))[0];
- function calculate(p,day,membersOverride=null,hoursOverride=null){
+ function calculate(p,day,membersOverride=null,hoursOverride=null,ieDate=null){
   const members=membersOverride??num(day?.[p+'HC']),hours=hoursOverride??num(day?.[p+'Hours']);
   const actual=num(day?.[p+'Normal']),date=day?.date;
   const rows=state.models.filter(m=>m.date===date).map(m=>{
    const total=num(m[p+'Total']),pairs=num(m[p+'Normal']);
-   return {model:key(m.model),pairs,seconds:num(standard(m.model,date)?.[p+'Cycle']),total};
+   return {model:key(m.model),pairs,seconds:num(standard(m.model,ieDate||date)?.[p+'Cycle']),total};
   }).filter(m=>m.total!==null||m.pairs!==null);
   const errors=[];
   if(!(members>0))errors.push(L('缺少正常班人員','Thiếu nhân lực ca chính','Regular-shift members missing'));
   if(!(hours>0))errors.push(L('缺少正常班工時','Thiếu giờ ca chính','Regular-shift hours missing'));
   if(actual===null||actual<0)errors.push(L('正常班產量／OT拆分待補','Thiếu sản lượng ca chính / OT','Regular output / OT breakdown missing'));
   if(!rows.length)errors.push(L('缺少型體明細','Thiếu chi tiết mã giày','Model breakdown missing'));
+  if(new Set(rows.map(m=>m.model)).size!==rows.length)errors.push(L('同日型體重複，請核對資料','Trùng mã trong ngày','Duplicate daily model records'));
   const missing=rows.filter(m=>m.pairs===null||m.pairs<0);
   if(missing.length)errors.push(L('型體正常班雙數待補：','Thiếu số đôi ca chính: ','Missing model regular pairs: ')+missing.map(m=>m.model).join(', '));
   if(!missing.length&&rows.length&&actual!==null&&Math.abs(rows.reduce((s,m)=>s+m.pairs,0)-actual)>.001)errors.push(L('型體合計與日報不符','Tổng mã không khớp báo cáo','Model totals do not reconcile'));
@@ -29,7 +30,7 @@
   const valid=!errors.length&&work>0;
   const avg=valid?work/actual:null,target8=valid?members*8*3600/avg:null,target=valid?members*hours*3600/avg:null;
   const efficiency=valid?actual/target:null,delta=valid?actual-target:null;
-  return {p,date,members,hours,actual,rows,errors,valid,work,avg,target8,target,efficiency,delta,variance:valid?delta/target:null,
+  return {p,date,members,hours,actual,rows,errors,valid,work,earnedHours:valid?work/3600:null,availableHours:members>0&&hours>0?members*hours:null,avg,target8,target,efficiency,delta,variance:valid?delta/target:null,
    allocations:valid?rows.map(m=>({...m,share:m.pairs/actual,target:m.pairs/actual*target,target8:m.pairs/actual*target8,
     singleModel8:m.seconds>0?members*8*3600/m.seconds:null})):[]};
  }
@@ -38,25 +39,25 @@
   const name=s.p==='gc'?'Stockfit / GCĐ':'Assembly / TH';
   if(!s.valid)return card(name+' · IE', '—',s.errors.join('；'));
   return card(name+' · '+L('正常班人員','Nhân lực ca chính','Regular-shift Member'),number(s.members,0),number(s.hours,1)+'H')+
-   card(name+' · '+L('IE應產雙數','Sản lượng chuẩn IE','IE target pairs'),number(s.target,1),L('固定8H應產 ','Chuẩn 8H ','8H target ')+number(s.target8,1))+
+   card(name+' · '+L('當日組合IE應產','Sản lượng chuẩn IE','IE target pairs'),number(s.target,1),L('同組合8H應產 ','Chuẩn 8H ','8H target ')+number(s.target8,1))+
    card(name+' · '+L('實際完成','Thực tế','Actual output'),number(s.actual,0),L('差異 ','Chênh lệch ','Gap ')+(s.delta>0?'+':'')+number(s.delta,1)+' '+L('雙','đôi','pairs'))+
    card(name+' · '+L('效率達成','Đạt hiệu suất','Efficiency attainment'),number(s.efficiency*100,1)+'%',L('差異率 ','Tỷ lệ chênh ','Variance ')+(s.variance>0?'+':'')+number(s.variance*100,1)+'%');
  }
  function table(s){
   if(!s.valid)return '<p class="ie-plan-warning">'+esc(s.errors.join('；'))+'</p>';
-  const th=[L('型體','Mã giày','Model'),L('IE秒／雙','Giây IE/đôi','IE s/pair'),L('當日配比','Tỷ trọng ngày','Daily mix'),L('8H配比應產','Chuẩn phân bổ 8H','Allocated 8H target'),L('正常班應產','Chuẩn ca chính','Regular target'),L('正常班實際','Thực tế ca chính','Regular actual'),L('差異雙數','Chênh lệch đôi','Pair gap'),L('效率達成','Đạt hiệu suất','Attainment')];
-  return '<div class="table-scroll"><table class="data-table"><thead><tr>'+th.map(t=>'<th>'+t+'</th>').join('')+'</tr></thead><tbody>'+s.allocations.map(m=>'<tr><td>'+esc(m.model)+'</td><td>'+number(m.seconds,0)+'</td><td>'+number(m.share*100,1)+'%</td><td>'+number(m.target8,1)+'</td><td>'+number(m.target,1)+'</td><td>'+number(m.pairs,0)+'</td><td>'+number(m.pairs-m.target,1)+'</td><td>'+(m.target>0?number(m.pairs/m.target*100,1)+'%':'—')+'</td></tr>').join('')+'<tr class="highlight"><td>'+L('整線合計','Tổng chuyền','Line total')+'</td><td>—</td><td>100%</td><td>'+number(s.target8,1)+'</td><td>'+number(s.target,1)+'</td><td>'+number(s.actual,0)+'</td><td>'+number(s.delta,1)+'</td><td>'+number(s.efficiency*100,1)+'%</td></tr></tbody></table></div>';
+  const th=[L('型體','Mã giày','Model'),L('IE秒／雙','Giây IE/đôi','IE s/pair'),L('當日配比','Tỷ trọng ngày','Daily mix'),L('8H配比應產','Chuẩn phân bổ 8H','Allocated 8H target'),L('正常班配比基準','Chuẩn phân bổ ca chính','Allocated regular target'),L('正常班實際','Thực tế ca chính','Regular actual'),L('配比分攤差異','Chênh lệch phân bổ','Allocated pair gap'),L('完成標準人時','Giờ công chuẩn hoàn thành','Earned standard hours')];
+  return '<div class="table-scroll"><table class="data-table"><thead><tr>'+th.map(t=>'<th>'+t+'</th>').join('')+'</tr></thead><tbody>'+s.allocations.map(m=>'<tr><td>'+esc(m.model)+'</td><td>'+number(m.seconds,0)+'</td><td>'+number(m.share*100,1)+'%</td><td>'+number(m.target8,1)+'</td><td>'+number(m.target,1)+'</td><td>'+number(m.pairs,0)+'</td><td>'+number(m.pairs-m.target,1)+'</td><td>'+number(m.pairs>0?m.pairs*m.seconds/3600:0,1)+'</td></tr>').join('')+'<tr class="highlight"><td>'+L('整線合計','Tổng chuyền','Line total')+'</td><td>—</td><td>100%</td><td>'+number(s.target8,1)+'</td><td>'+number(s.target,1)+'</td><td>'+number(s.actual,0)+'</td><td>'+number(s.delta,1)+'</td><td>'+number(s.earnedHours,1)+'</td></tr></tbody></table></div>';
  }
- function note(){return L('IE應產＝人員×工時×3600÷加權IE秒值。三款共用人員只計一次；依當日正常班雙數比例配比，底加與成型分開計算。差異率＝（實際−應產）÷應產；效率達成＝實際÷應產。配比為當日組合基準，各款相同比例的達成率不代表獨立型體效率。',
-  'Chuẩn IE = nhân lực × giờ × 3600 ÷ giây IE bình quân. Nhân lực chung chỉ tính một lần; phân bổ theo tỷ trọng đôi ca chính. GCĐ và TH tính riêng. Chênh lệch = (thực tế − chuẩn) ÷ chuẩn; đạt = thực tế ÷ chuẩn. Tỷ lệ theo cơ cấu ngày không phải hiệu suất riêng từng mã.',
-  'IE target = Member × hours × 3600 / weighted IE seconds. Shared members are counted once; targets use regular-shift model pair shares. Processes are separate. Variance = (actual − target) / target; attainment = actual / target. Mix-based model attainment is not independently measured model efficiency.');}
+ function note(){return L('混線達成率＝Σ（各款正常班雙數×IE人工秒值）÷（整線人員×實際正常班工時×3600）。8H應產＝人員×8×3600÷當日雙數加權IE秒值，隨型體組合變動；這是依已完成組合回算的100% IE基準，不是預先排程量。各款配比應產及差異僅為整線分配，不判定單款效率。各款完成標準人時加總後與整線投入人時比較；底加、成型分開，OT排除。人員按整班投入計算；分時支援須依實際投入人時校正。尚無換型／停線工時紀錄，無法另算扣除損失後的排程產能。',
+  'Hiệu suất hỗn hợp = tổng (đôi ca chính từng mã × giây IE) / (nhân lực × giờ thực tế × 3600). Chuẩn 8H phụ thuộc cơ cấu mã trong ngày, là quy đổi sau sản xuất, không phải kế hoạch cố định. Chỉ tính nhân lực chung một lần; phân bổ không phải hiệu suất từng mã. GCĐ và TH tách riêng, loại OT. Giả định nhân lực tham gia đủ ca; hỗ trợ bán thời gian cần giờ công thực tế. Chưa có thời gian đổi mã/dừng để tính công suất sau tổn thất.',
+  'Mixed-model efficiency = sum(model regular pairs × IE seconds) / (Member × actual hours × 3600). The 8H target uses the daily weighted mix: a retrospective 100% IE equivalent, not a fixed schedule. Shared members count once; allocations do not measure model efficiency. Processes are separate and OT excluded. Full-shift participation is assumed; partial support requires actual labor-hours. Changeover/downtime records are unavailable for loss-adjusted scheduling capacity.');}
  function renderTargets(){
   const compare=periods().compare,grid=document.getElementById('kpiGrid');
   document.getElementById('ieCapacityPlanner')?.remove();
   if(compare.length!==1){if(grid)grid.innerHTML=card(L('請選擇單一生產日','Chọn một ngày sản xuất','Select one production day'),'—','');return;}
   const day=compare[0],gc=calculate('gc',day),asm=calculate('asm',day);
   if(grid)grid.innerHTML=summary(gc)+summary(asm);
-  const insight=document.getElementById('insights');if(insight)insight.innerHTML=[gc,asm].map(s=>'<div class="insight-item"><strong>'+(s.p==='gc'?'Stockfit / GCĐ':'Assembly / TH')+' · IE</strong><p>'+esc(s.valid?L('當日人員 ','Nhân lực ngày ','Daily Member ')+number(s.members,0)+' · '+number(s.hours,1)+'H · '+L('IE應產 ','Chuẩn IE ','IE target ')+number(s.target,1)+' · '+L('實際 ','Thực tế ','Actual ')+number(s.actual,0)+' · '+L('差異 ','Chênh lệch ','Gap ')+number(s.delta,1)+' · '+L('效率達成 ','Đạt hiệu suất ','Attainment ')+number(s.efficiency*100,1)+'%':s.errors.join('；'))+'</p></div>').join('');
+  const insight=document.getElementById('insights');if(insight&&window.FactoryMixInsight)insight.innerHTML=window.FactoryMixInsight.render(day);
   let panel=document.getElementById('ieOverviewTargets');
   if(!panel){panel=document.createElement('article');panel.id='ieOverviewTargets';panel.className='panel ie-overview-targets';grid.insertAdjacentElement('afterend',panel);}
   panel.innerHTML='<div class="panel-head"><h3>'+L('各型體 IE 8H應產與實績','Chuẩn IE 8H và thực tế theo mã','Model IE 8H targets and actuals')+' · '+esc(day.date)+'</h3></div><h4>Stockfit / GCĐ</h4>'+table(gc)+'<h4>Assembly / TH</h4>'+table(asm)+'<p class="ie-mix-note">'+note()+'</p>';
