@@ -111,3 +111,34 @@ end;
 $$;
 revoke all on function public.save_factory_entry(jsonb,integer) from public, anon, authenticated;
 grant execute on function public.save_factory_entry(jsonb,integer) to service_role;
+
+-- Hashed private access keys; no plaintext keys in public source.
+create table if not exists public.factory_link_credentials(
+ key_hash text primary key check(key_hash ~ '^[0-9a-f]{64}$'),
+ role text not null check(role in ('staff','admin')),
+ active boolean not null default true,
+ created_at timestamptz not null default now()
+);
+alter table public.factory_link_credentials enable row level security;
+revoke all on public.factory_link_credentials from public,anon,authenticated;
+grant select on public.factory_link_credentials to service_role;
+
+-- V1.7: NBY is the only factory. Legacy column "factory" holds A-D building letters.
+alter table public.production_entries add column if not exists plant text not null default 'NBY';
+alter table public.production_entries drop constraint if exists production_entries_plant_only_nby;
+alter table public.production_entries add constraint production_entries_plant_only_nby check(plant='NBY');
+create table if not exists public.historical_process_daily(
+ production_date date not null,
+ plant text not null default 'NBY' check(plant='NBY'),
+ process text not null check(process in ('gc','asm')),
+ normal_output integer not null check(normal_output>=0),
+ normal_hc integer not null check(normal_hc>0),
+ normal_hours numeric(5,2) not null check(normal_hours>0 and normal_hours<=16),
+ source_name text not null,
+ created_at timestamptz not null default now(),
+ primary key(production_date,plant,process)
+);
+alter table public.historical_process_daily enable row level security;
+revoke all on public.historical_process_daily from public,anon,authenticated;
+grant select on public.historical_process_daily to service_role;
+-- Factory-wide historical source data is private, never commit it into public GitHub.
