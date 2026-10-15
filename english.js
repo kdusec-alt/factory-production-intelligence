@@ -362,3 +362,10 @@ window.FACTORY_EN={
  }
 };
 window.FACTORY_EN.translate=(zh)=>Object.prototype.hasOwnProperty.call(window.FACTORY_EN.phrases,zh)?window.FACTORY_EN.phrases[zh]:zh;
+
+Object.assign(window.FACTORY_EN.ie,{
+ ieFormSub:"Enter total manual standard seconds across all stations per pair (no machine or waiting time). HC is estimated automatically from actual production and historical performance.",
+ ieCycle:"Total manual seconds / pair",
+ ieTarget:"Scenario pairs (optional)",
+ ieMixSub:"Calculate labor workload from manual seconds and actual model mix; estimate reasonable HC only with sufficient validated history."
+});

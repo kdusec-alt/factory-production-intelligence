@@ -84,3 +84,12 @@ body.cloud-manager #cloudTopStatus[data-state="error"]{background:#fff0f0;color:
 /* V1.14: viewers can only read shared Supabase data; admin Excel imports auto-save. */
 body.cloud-viewer label[for="fileInput"],body.cloud-viewer #fileInput{display:none!important}
 body.cloud-manager #fileInput:disabled+span{opacity:.5}
+
+/* V1.15: admin-only IE cloud editor; all production forms remain unavailable in cloud mode. */
+body.cloud-manager:not(.cloud-viewer) .nav-link[data-view="entry"]{display:flex!important}
+body.cloud-manager:not(.cloud-viewer) #view-entry.active{display:block!important}
+body.cloud-manager:not(.cloud-viewer) #view-entry .entry-tab:not([data-entry-tab="ie"]){display:none!important}
+body.cloud-manager:not(.cloud-viewer) #view-entry .entry-pane:not(#entry-ie){display:none!important}
+body.cloud-manager:not(.cloud-viewer) #view-entry .section-head .tag{display:none}
+.ie-flag{color:#ad493c;font-weight:700}
+.ie-summary-card{overflow-wrap:anywhere}

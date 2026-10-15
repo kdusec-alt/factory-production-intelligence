@@ -8,14 +8,14 @@
   <title>Factory Production Intelligence | 產效智能管理</title>
   <link rel="stylesheet" href="styles.css?v=114" />
   <script src="data/factory-data.js" defer></script>
-  <script src="english.js?v=114" defer></script>
+  <script src="english.js?v=115" defer></script>
   <script src="insights.js?v=23" defer></script>
-  <script src="app.js?v=1142" defer></script>
-  <script src="records.js?v=113" defer></script>
-  <script src="ie.js?v=20" defer></script>
+  <script src="app.js?v=115" defer></script>
+  <script src="records.js?v=115" defer></script>
+  <script src="ie.js?v=115" defer></script>
   <script src="cloud.js?v=113" defer></script>
   <script src="cloud-config.js" defer></script>
-  <script src="cloud-dashboard.js?v=1143" defer></script>
+  <script src="cloud-dashboard.js?v=115" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -82,16 +82,12 @@
               </div>
               <div class="entry-process-grid">
                 <fieldset><legend>Stockfit / GCĐ</legend><div class="entry-form-grid">
-                  <label><span data-i18n="ieSAM">SAM 標準人分鐘／雙</span><input id="ieGcSam" type="number" min="0" step="0.001" placeholder="—" /></label>
-                  <label><span data-i18n="ieCycle">IE節拍 秒／雙</span><input id="ieGcCycle" type="number" min="0" step="0.01" placeholder="—" /></label>
-                  <label><span data-i18n="ieDedicatedHC">IE 專用HC（模擬）</span><input id="ieGcHC" type="number" min="1" step="1" placeholder="—" /></label>
-                  <label><span data-i18n="ieEfficiency">目標效率 %</span><input id="ieGcEff" type="number" min="0.01" max="100" step="0.1" placeholder="—" /></label>
+                  <label><span data-i18n="ieCycle">人工總秒值（秒／雙）</span><input id="ieGcCycle" type="number" min="0.001" max="300000" step="0.01" placeholder="例：4618" /></label>
+                  <label><span data-i18n="ieTarget">試算雙數（選填）</span><input id="ieGcTargetPairs" type="number" min="1" step="1" placeholder="自動參考最近同款實績" /></label>
                 </div><div id="ieGcPreview" class="entry-preview">—</div></fieldset>
                 <fieldset><legend>Assembly / TH</legend><div class="entry-form-grid">
-                  <label><span data-i18n="ieSAM">SAM 標準人分鐘／雙</span><input id="ieAsmSam" type="number" min="0" step="0.001" placeholder="—" /></label>
-                  <label><span data-i18n="ieCycle">IE節拍 秒／雙</span><input id="ieAsmCycle" type="number" min="0" step="0.01" placeholder="—" /></label>
-                  <label><span data-i18n="ieDedicatedHC">IE 專用HC（模擬）</span><input id="ieAsmHC" type="number" min="1" step="1" placeholder="—" /></label>
-                  <label><span data-i18n="ieEfficiency">目標效率 %</span><input id="ieAsmEff" type="number" min="0.01" max="100" step="0.1" placeholder="—" /></label>
+                  <label><span data-i18n="ieCycle">人工總秒值（秒／雙）</span><input id="ieAsmCycle" type="number" min="0.001" max="300000" step="0.01" placeholder="例：5328" /></label>
+                  <label><span data-i18n="ieTarget">試算雙數（選填）</span><input id="ieAsmTargetPairs" type="number" min="1" step="1" placeholder="自動參考最近同款實績" /></label>
                 </div><div id="ieAsmPreview" class="entry-preview">—</div></fieldset>
               </div>
               <label class="entry-full"><span data-i18n="ieNotes">IE備註／版本來源</span><textarea id="ieNotes" rows="2" maxlength="1000" placeholder="IE approved standard / process &amp; version"></textarea></label>

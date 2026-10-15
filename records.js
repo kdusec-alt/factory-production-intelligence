@@ -172,6 +172,12 @@ function bindWorkspace(){
  $('importBackup').addEventListener('change',async e=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;try{await importBackup(file);}catch(err){showMessage(tr('還原失敗：','Khôi phục thất bại: ')+err.message,true);}});
  $('undoChange').addEventListener('click',()=>{void undo();});
 }
+window.readLocalIEStandards=async()=>{
+ const local=await openDB();
+ try{const stored=await request(local.transaction('snapshots','readonly').objectStore('snapshots').get('active'));
+  return Array.isArray(stored?.snapshot?.ieStandards)?stored.snapshot.ieStandards:[];
+ }finally{local.close();}
+};
 window.initializeRecordSystem=async()=>{
  bindWorkspace();clearDaily();clearModel();clearQuality();window.initializeIESystem?.();
  if(window.FactoryCloudDashboard?.enabled){$('dbStatus').textContent='Supabase cloud manager mode · browser data unchanged';window.FactoryCloudDashboard.activate();return;}
