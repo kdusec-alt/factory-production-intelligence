@@ -142,6 +142,7 @@
   if(dashboardLink&&adminKey.length>=32)dashboardLink.href='./index.html#admin='+encodeURIComponent(adminKey);
   if(!endpoint||adminKey.length<32){status(false,t('missingKey'));return;}
   void reload();
+  setInterval(()=>{if(document.visibilityState==='visible')void reload();},300000);
  }
  document.addEventListener('DOMContentLoaded',init);
 })();
