@@ -8,17 +8,17 @@
   <title>Nhập báo cáo sản xuất · Factory Intelligence</title>
   <link rel="stylesheet" href="staff.css">
   <script src="cloud-config.js" defer></script>
-  <script src="staff.js" defer></script>
-  <script src="nby-benchmark.js" defer></script>
+  <script src="staff.js?v=18" defer></script>
+  <script src="nby-benchmark.js?v=18" defer></script>
 </head>
 <body>
   <main class="shell">
     <header class="top"><div class="logo">F<span>·</span></div><div class="brand"><strong>FACTORY INTELLIGENCE</strong><small>DAILY PRODUCTION REPORT</small></div><button type="button" id="lang" class="lang">中文</button></header>
-    <section class="hero"><div class="eyebrow" data-t="tag">BÁO CÁO SẢN XUẤT</div><h1 data-t="title">Nhập số liệu hằng ngày</h1><p data-t="subtitle">Chọn chuyền, nhập sản lượng và nhân lực, sau đó nhấn Lưu. Không cần Excel hay GitHub.</p></section>
+    <section class="hero"><div class="eyebrow" data-t="tag">BÁO CÁO SẢN XUẤT</div><h1 data-t="title">Nhập số liệu hằng ngày</h1><p data-t="subtitle">Chọn công đoạn NBY, nhập sản lượng và nhân lực, sau đó nhấn Lưu. Không cần Excel hay GitHub.</p></section>
     <div id="status" class="status pending" role="status" aria-live="polite"><span class="status-icon">●</span><span id="statusText" data-t="connecting">Đang kiểm tra kết nối…</span></div>
     <form id="reportForm" novalidate>
-      <section class="panel"><div class="panel-head"><span class="step">01</span><div><h2 data-t="locationTitle">Thông tin sản xuất</h2><p data-t="locationDesc">Chọn ngày, tòa nhà và chuyền sản xuất</p></div></div>
-        <div class="fields four"><label><span data-t="date">Ngày sản xuất</span><input id="date" type="date" required></label><label><span data-t="plant">Nhà máy</span><input id="plant" value="NBY" readonly aria-readonly="true"></label><label><span data-t="factory">Tòa nhà</span><select id="factory" required><option value="A">Tòa A</option><option value="B">Tòa B</option><option value="C">Tòa C</option><option value="D">Tòa D</option></select></label><label><span data-t="line">Chuyền</span><select id="line" required></select></label></div>
+      <section class="panel"><div class="panel-head"><span class="step">01</span><div><h2 data-t="locationTitle">Thông tin sản xuất</h2><p data-t="locationDesc">Chọn ngày sản xuất và công đoạn của NBY</p></div></div>
+        <div class="fields two"><label><span data-t="date">Ngày sản xuất</span><input id="date" type="date" required></label><label><span data-t="plant">Nhà máy</span><input id="plant" value="NBY" readonly aria-readonly="true" aria-label="Nhà máy NBY"></label></div>
         <div class="fields two"><label><span data-t="process">Công đoạn</span><select id="process" required><option value="gc">Stockfit / GCĐ (底加)</option><option value="asm">Assembly / TH (成型)</option></select></label><label><span data-t="operator">Người nhập liệu</span><input id="operator" type="text" maxlength="80" autocomplete="name" required placeholder="VD: Nguyễn Văn A"></label></div>
       </section>
       <section class="panel"><div class="panel-head"><span class="step">02</span><div><h2 data-t="outputTitle">Sản lượng và nhân lực</h2><p data-t="outputDesc">Nhập tổng số đôi đã hoàn thành và số người làm ca chính</p></div></div>
