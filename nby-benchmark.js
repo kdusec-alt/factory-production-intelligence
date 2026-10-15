@@ -6,7 +6,7 @@
  const messages={
   vi:{
    title:'Phân tích hiệu suất theo chuẩn 8 giờ',expected:'Mốc tham chiếu 8H',actual:'Sản lượng quy đổi 8H',achievement:'So với mốc lịch sử',difference:'Chênh lệch 8H',
-   none:'Thiếu dữ liệu lịch sử',loading:'Đang phân tích…',error:'Không tải được mốc lịch sử',above:'Cao hơn mức lịch sử',met:'Đạt mốc tham chiếu',near:'Gần mức tham chiếu',below:'Dưới mức tham chiếu',
+   none:'Thiếu dữ liệu lịch sử',waiting:'Chờ nhập số liệu',loading:'Đang phân tích…',error:'Không tải được mốc lịch sử',fetchFailed:'Không thể truy cập dữ liệu lịch sử, tạm thời không đưa ra nhận định.',above:'Cao hơn mức lịch sử',met:'Đạt mốc tham chiếu',near:'Gần mức tham chiếu',below:'Dưới mức tham chiếu',
    plantSource:'Trung bình lịch sử toàn công đoạn NBY',processSource:'Các báo cáo NBY cùng công đoạn',modelSource:'Cùng công đoạn và nhóm mã giày',
    unknown:'Chưa xác nhận OT: chưa thể đánh giá ca chính.',needInput:'Nhập HC, giờ làm, sản lượng và xác nhận OT để hệ thống đánh giá.',
    noHistory:'Chưa đủ ít nhất 5 ngày dữ liệu lịch sử. Không tự đặt mục tiêu hoặc đánh giá đạt/chưa đạt.',
@@ -19,7 +19,7 @@
   },
   zh:{
    title:'8小時標準化產效智能判讀',expected:'歷史8H參考值',actual:'正常班8H等效',achievement:'相對歷史達成率',difference:'8H產量差異',
-   none:'歷史樣本不足',loading:'正在分析…',error:'歷史資料讀取失敗',above:'高於歷史參考',met:'達到歷史參考',near:'接近歷史參考',below:'低於歷史參考',
+   none:'歷史樣本不足',waiting:'等待輸入資料',loading:'正在分析…',error:'歷史資料讀取失敗',fetchFailed:'歷史資料目前無法讀取，暫不進行達成判定。',above:'高於歷史參考',met:'達到歷史參考',near:'接近歷史參考',below:'低於歷史參考',
    plantSource:'NBY同製程歷史總量平均',processSource:'NBY同製程填報平均',modelSource:'同製程且相同型體組合',
    unknown:'OT尚未確認，暫不判定正常班產效。',needInput:'請填寫HC、正常班工時、完成雙數及OT狀態，系統才會判讀。',
    noHistory:'有效歷史資料不足5天，不自行設定產效目標或判定達成。',
@@ -35,7 +35,7 @@
   },
   en:{
    title:'Smart productivity review · 8-hour basis',expected:'Historical 8H reference',actual:'Actual 8H equivalent',achievement:'Vs. historical reference',difference:'8H output gap',
-   none:'Insufficient history',loading:'Analyzing…',error:'Historical data unavailable',above:'Above historical reference',met:'Meets historical reference',near:'Near historical reference',below:'Below historical reference',
+   none:'Insufficient history',waiting:'Waiting for inputs',loading:'Analyzing…',error:'Historical data unavailable',fetchFailed:'Historical data cannot be loaded; no achievement verdict is made.',above:'Above historical reference',met:'Meets historical reference',near:'Near historical reference',below:'Below historical reference',
    plantSource:'NBY process-wide historical average',processSource:'Prior NBY reports for the same process',modelSource:'Same process and model-code mix',
    unknown:'OT is unconfirmed. Regular-shift productivity cannot be assessed.',needInput:'Enter HC, regular hours, output and OT status to enable the assessment.',
    noHistory:'Fewer than 5 valid historical days. No target or pass/fail verdict is inferred.',
@@ -74,7 +74,7 @@
   $('benchmarkActual8h').textContent=actual8===null?'—':number(actual8)+' '+tr('unit');
   $('benchmarkExpected').textContent=$('benchmarkAchievement').textContent=$('benchmarkDifference').textContent='—';
   if(fetchState==='loading'){tag.textContent=tr('loading');detail.textContent=tr('formula');insight.textContent=mode==='unknown'?tr('unknown'):tr('needInput');return;}
-  if(fetchState==='error'){tag.textContent=tr('error');detail.textContent=tr('formula');insight.textContent=tr('noHistory');return;}
+  if(fetchState==='error'){tag.textContent=tr('error');detail.textContent=tr('formula');insight.textContent=tr('fetchFailed');return;}
   if(!baseline||!Number.isFinite(baseline.rate)||baseline.rate<=0||baseline.samples<5){
    tag.textContent=tr('none');detail.textContent=tr('formula');insight.textContent=tr('noHistory');return;
   }
@@ -83,7 +83,7 @@
   const source=baseline.source==='nby_model'?tr('modelSource'):baseline.source==='nby_process'?tr('processSource'):tr('plantSource');
   const caveat=baseline.source==='nby_model'?'':tr('noModel')+' ';
   detail.textContent=source+' · '+baseline.samples+' '+tr('samples')+' · '+Number(baseline.rate).toFixed(3)+' '+tr('unit')+'/HC·h · '+baseline.history_start+'–'+baseline.history_end+'. '+tr('formula')+' '+caveat+tr('reference');
-  if(!valid){tag.textContent=tr('none');insight.textContent=mode==='unknown'?tr('unknown'):tr('needInput');return;}
+  if(!valid){tag.textContent=tr('waiting');insight.textContent=mode==='unknown'?tr('unknown'):tr('needInput');return;}
   const ratio=(total-ot)/(hc*hours*baseline.rate);
   const gap=actual8-expected8;
   $('benchmarkAchievement').textContent=(ratio*100).toFixed(1)+'%';
