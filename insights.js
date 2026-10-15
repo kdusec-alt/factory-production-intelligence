@@ -197,6 +197,23 @@
       }
       result.push(box(p.label+' · '+headline,desc,p.kind,modelDetails(p)));
     }
+    if(!d.missingOT){
+      for(const p of d.processes){
+        const key=p.p==='gc'?'gcOTShare':'asmOTShare';
+        const oldShare=num(a[key]),newShare=num(b[key]);
+        if(oldShare===null||newShare===null||Math.abs(newShare-oldShare)<0.03)continue;
+        const delta=(newShare-oldShare)*100,rising=delta>0;
+        result.push(box(p.label+' · '+L(lang,
+          rising?'OT完成產量占比上升':'OT完成產量占比下降',
+          rising?'Tỷ trọng sản lượng OT tăng':'Tỷ trọng sản lượng OT giảm',
+          rising?'OT output share increased':'OT output share decreased'),
+          L(lang,
+            `OT完成量占比由${(oldShare*100).toFixed(1)}%變為${(newShare*100).toFixed(1)}%（${delta>0?'+':''}${delta.toFixed(1)}百分點）。應連同正常班產量及OT人力核對，不能僅憑占比判定改善或惡化。`,
+            `Tỷ trọng OT từ ${(oldShare*100).toFixed(1)}% thành ${(newShare*100).toFixed(1)}% (${delta>0?'+':''}${delta.toFixed(1)} điểm %). Cần đối chiếu sản lượng ca chính và nhân lực OT.`,
+            `OT output share changed from ${(oldShare*100).toFixed(1)}% to ${(newShare*100).toFixed(1)}% (${delta>0?'+':''}${delta.toFixed(1)} percentage points). Review regular-shift output and OT staffing; the share alone does not prove improvement or deterioration.`),
+          rising?'caution':'neutral'));
+      }
+    }
     if(d.missingOT){
       result.push(box(L(lang,'OT資料待確認','Cần xác nhận dữ liệu OT','OT data needs confirmation'),
         L(lang,'B日OT產量為0但未明確確認無加班，或OT資料缺漏；請先核實後再解讀正常班產效。',
