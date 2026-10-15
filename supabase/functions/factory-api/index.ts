@@ -28,6 +28,7 @@ function validate(raw:unknown):Record<string,unknown>{
  const r=raw as Record<string,unknown>;
  const {production_date,factory,line,process,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,operator_name,notes}=r;
  if(!validDate(production_date))throw new Error('Invalid production date');
+ if(r.plant!==undefined&&r.plant!=='NBY')throw new Error('Only NBY factory is supported');
  if(!['A','B','C','D'].includes(String(factory)))throw new Error('Invalid factory');
  if(typeof line!=='string'||!new RegExp('^'+factory+'0[1-'+(factory==='D'?6:7)+']$').test(line))throw new Error('Invalid line');
  if(!['gc','asm'].includes(String(process)))throw new Error('Invalid process');
@@ -50,7 +51,7 @@ function validate(raw:unknown):Record<string,unknown>{
   codes.add(m.code);modelTotal+=Number(m.total);modelOT+=Number(m.ot||0);
  }
  if(modelTotal!==output_total||ot_output!==null&&modelOT!==ot_output)throw new Error('Model totals do not reconcile');
- return {production_date,factory,line,process,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,operator_name:operator_name.trim(),notes:notes.trim()};
+ return {production_date,plant:'NBY',factory,line,process,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,operator_name:operator_name.trim(),notes:notes.trim()};
 }
 Deno.serve(async (request:Request)=>{
  const origin=request.headers.get('origin');
@@ -106,7 +107,7 @@ Deno.serve(async (request:Request)=>{
   if(!isAdmin)return send(403,{error:'Manager access required'},origin);
   const from=body.date_from,to=body.date_to;
   if(!validDate(from)||!validDate(to)||String(from)>String(to))return send(422,{error:'Invalid date range'},origin);
-  const {data,error}=await supabase.from('production_entries').select('production_date,factory,line,process,operator_name,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,notes,revision,updated_at').gte('production_date',from).lte('production_date',to).order('production_date',{ascending:false}).limit(2000);
+  const {data,error}=await supabase.from('production_entries').select('plant,production_date,factory,line,process,operator_name,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,notes,revision,updated_at').gte('production_date',from).lte('production_date',to).order('production_date',{ascending:false}).limit(2000);
   if(error){console.error('List error',error.code);return send(500,{error:'Cannot load reports'},origin);}
   return send(200,{ok:true,rows:data||[],truncated:(data||[]).length===2000},origin);
  }
