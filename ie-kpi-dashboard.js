@@ -32,10 +32,7 @@
   }
   target.innerHTML='<div class="panel-head"><div><h3>'+lang('IE 標準產能與實際達成','Năng suất IE và thực tế','IE capacity vs actual')+'</h3><p>'+lang('依現有 IE 與當日實際型體比例回推；同線共用人員，兩製程不相加。此為100%人工工時理論值，非瓶頸驗證產能。','Theo IE và cơ cấu thực tế; dùng chung nhân viên, không cộng hai công đoạn.','Based on saved IE and actual mix; shared members, processes not added. 100% theoretical labor capacity.')+'</p></div></div><div class="table-scroll"><table class="data-table"><thead>'+headings+'</thead><tbody>'+lines.join('')+'</tbody></table></div>';
  }
- const previous=window.renderOverview;
- window.renderOverview=function(){if(typeof previous==='function')previous();render();};
- // app.js declares renderOverview as a lexical function; wrap render() via render cycle below.
- const observer=new MutationObserver(()=>{if(id('ieKpiPanel')&&id('view-overview')?.classList.contains('active'))render();});
- document.addEventListener('DOMContentLoaded',()=>{render();const grid=id('kpiGrid');if(grid)observer.observe(grid,{childList:true});});
+ // app.js invokes this after each render and on cloud refresh.
+ document.addEventListener('DOMContentLoaded',render);
  window.renderFactoryIEKPI=render;
 })();
