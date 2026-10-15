@@ -162,7 +162,13 @@
   if(active)return;active=true;
   document.body.classList.add('cloud-manager');
   if(isViewer)document.body.classList.add('cloud-viewer');
-  if(isAdmin){const upload=document.querySelector('label[for="fileInput"] [data-i18n="upload"]');if(upload){upload.removeAttribute('data-i18n');upload.textContent='匯入 Excel（自動存雲端）';}}
+  if(isAdmin){
+   const upload=document.querySelector('label[for="fileInput"] [data-i18n="upload"]');
+   if(upload){upload.removeAttribute('data-i18n');
+    const updateLabel=()=>{const l=document.documentElement.lang;upload.textContent=l==='vi'?'Nhập Excel (tự động lưu đám mây)':l==='en'?'Import Excel (auto-save to cloud)':'匯入 Excel（自動存雲端）';};
+    updateLabel();$('langBtn')?.addEventListener('change',updateLabel);
+   }
+  }
   const actions=document.querySelector('.headline-actions');
   if(actions){
    refreshButton=document.createElement('button');refreshButton.type='button';refreshButton.id='refreshCloud';refreshButton.className='primary';refreshButton.textContent='↻ 更新雲端';

@@ -17,7 +17,7 @@ window.FACTORY_EN={
   "overviewSub": "Integrated analysis of regular-shift output, overtime, headcount and quality to monitor daily performance and stability.",
   "demo": "Reload website data",
   "downloadVN": "Export backup",
-  "upload": "Import Excel",
+  "upload": "Import Excel (this device only)",
   "clear": "Manage data",
   "period": "Daily productivity comparison",
   "weighted": "Select two production days · regular-shift output and pairs per person-hour",
