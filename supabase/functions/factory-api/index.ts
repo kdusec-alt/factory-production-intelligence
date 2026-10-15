@@ -27,11 +27,9 @@ async function hashKey(value:string):Promise<string>{
 function validate(raw:unknown):Record<string,unknown>{
  if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('Invalid report');
  const r=raw as Record<string,unknown>;
- const {production_date,factory,line,process,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,operator_name,notes}=r;
+ const {production_date,plant,process,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,operator_name,notes}=r;
  if(!validDate(production_date))throw new Error('Invalid production date');
- if(r.plant!==undefined&&r.plant!=='NBY')throw new Error('Only NBY factory is supported');
- if(!['A','B','C','D'].includes(String(factory)))throw new Error('Invalid factory');
- if(typeof line!=='string'||!new RegExp('^'+factory+'0[1-'+(factory==='D'?6:7)+']$').test(line))throw new Error('Invalid line');
+ if(plant!=='NBY')throw new Error('Only NBY factory is supported');
  if(!['gc','asm'].includes(String(process)))throw new Error('Invalid process');
  if(!isInt(output_total,0,20000)||!isInt(normal_hc,1,1000)||!isNum(normal_hours,.5,16))throw new Error('Invalid output, HC or normal hours');
  if(typeof operator_name!=='string'||operator_name.trim().length<2||operator_name.length>80)throw new Error('Operator is required');
@@ -52,7 +50,7 @@ function validate(raw:unknown):Record<string,unknown>{
   codes.add(m.code);modelTotal+=Number(m.total);modelOT+=Number(m.ot||0);
  }
  if(modelTotal!==output_total||ot_output!==null&&modelOT!==ot_output)throw new Error('Model totals do not reconcile');
- return {production_date,plant:'NBY',factory,line,process,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,operator_name:operator_name.trim(),notes:notes.trim()};
+ return {production_date,plant:'NBY',process,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,operator_name:operator_name.trim(),notes:notes.trim()};
 }
 Deno.serve(async (request:Request)=>{
  const origin=request.headers.get('origin');
@@ -91,13 +89,12 @@ Deno.serve(async (request:Request)=>{
  const action=body.action;
  if(action==='health')return send(200,{ok:true,role:isAdmin?'admin':'staff'},origin);
  if(action==='benchmark'){
-  const date=body.production_date,factory=String(body.factory||''),line=String(body.line||''),process=String(body.process||''),models=body.models;
-  const lineNum=Number(line.slice(1));
-  if(!validDate(date)||!['A','B','C','D'].includes(factory)||line.length!==3||line[0]!==factory||line[1]!=='0'||!Number.isInteger(lineNum)||lineNum<1||lineNum>(factory==='D'?6:7)||!['gc','asm'].includes(process))
+  const date=body.production_date,process=String(body.process||''),models=body.models;
+  if(!validDate(date)||!['gc','asm'].includes(process))
    return send(422,{error:'Invalid benchmark selection'},origin);
   if(!Array.isArray(models)||models.length>20||models.some(x=>typeof x!=='string'||x.length>70))
    return send(422,{error:'Invalid model selection'},origin);
-  try{return send(200,await benchmark(supabase,String(date),factory,line,process,[...new Set(models)].sort()),origin);}
+  try{return send(200,await benchmark(supabase,String(date),process,[...new Set(models)].sort()),origin);}
   catch(e){console.error('Benchmark error');return send(500,{error:'Cannot calculate benchmark'},origin);}
  }
  if(action==='save'){
@@ -112,13 +109,13 @@ Deno.serve(async (request:Request)=>{
    if(match)return send(409,{error:'This report already exists or has changed',revision:Number(match[1])},origin);
    console.error('DB error',error.code);return send(500,{error:'Could not save report. Contact manager.'},origin);
   }
-  return send(200,{ok:true,id:data.id,revision:data.revision,saved_at:data.updated_at,production_date:data.production_date,plant:'NBY',line:data.line},origin);
+  return send(200,{ok:true,id:data.id,revision:data.revision,saved_at:data.updated_at,production_date:data.production_date,plant:'NBY',process:data.process},origin);
  }
  if(action==='list'){
   if(!isAdmin)return send(403,{error:'Manager access required'},origin);
   const from=body.date_from,to=body.date_to;
   if(!validDate(from)||!validDate(to)||String(from)>String(to))return send(422,{error:'Invalid date range'},origin);
-  const {data,error}=await supabase.from('production_entries').select('plant,production_date,factory,line,process,operator_name,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,notes,revision,updated_at').gte('production_date',from).lte('production_date',to).order('production_date',{ascending:false}).limit(2000);
+  const {data,error}=await supabase.from('production_entries').select('plant,production_date,process,operator_name,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,notes,revision,updated_at').gte('production_date',from).lte('production_date',to).order('production_date',{ascending:false}).limit(2000);
   if(error){console.error('List error',error.code);return send(500,{error:'Cannot load reports'},origin);}
   return send(200,{ok:true,rows:data||[],truncated:(data||[]).length===2000},origin);
  }
