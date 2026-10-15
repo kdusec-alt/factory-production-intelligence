@@ -78,3 +78,5 @@
 body.cloud-manager #modeNotice,body.cloud-manager [data-view="entry"],body.cloud-manager #view-entry,body.cloud-manager #quickEntry,body.cloud-manager #goEntry,body.cloud-manager #demoBtn,body.cloud-manager #downloadVN,body.cloud-manager #clearBtn,body.cloud-manager label[for="fileInput"]{display:none!important}
 body.cloud-manager #cloudTopStatus{background:#e8f6ef;color:#11663b;border-color:#a5d6bd}
 body.cloud-manager #refreshCloud[disabled]{opacity:.55;cursor:wait}
+
+body.cloud-manager #cloudTopStatus[data-state="error"]{background:#fff0f0;color:#a12121;border-color:#eab6b6}
