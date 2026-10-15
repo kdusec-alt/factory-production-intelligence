@@ -212,7 +212,21 @@
     migrate.addEventListener('click',()=>{void migrateLocalIE();});actions.append(migrate);
    }
   }
-  if(isAdmin){document.querySelector('.nav-link[data-view="entry"]')?.addEventListener('click',()=>{window.switchEntryTab?.('ie');});}
+  if(isAdmin){
+   const nav=document.querySelector('.nav-link[data-view="entry"]');
+   const navText=nav?.lastElementChild,heading=document.querySelector('#view-entry .section-head h2'),sub=document.querySelector('#view-entry .section-head p');
+   for(const el of [navText,heading,sub])el?.removeAttribute('data-i18n');
+   const localizeIE=()=>{
+    const lang=document.documentElement.lang;
+    const vi=lang==='vi',en=lang==='en';
+    if(navText)navText.textContent=vi?'Quản lý IE':en?'IE Standards':'IE 標準管理';
+    if(heading)heading.textContent=vi?'Định mức IE và nhân lực':en?'Manual IE standards and HC':'IE 人工總秒值與合理 HC';
+    if(sub)sub.textContent=vi?'Lưu tự động lên đám mây. Tính nhân lực theo tổng giây thao tác và hiệu suất lịch sử.':en?'Cloud-saved manual work-content seconds, automatic HC estimates and history-based efficiency.':'人工總秒值自動儲存雲端；依型體組合、實際HC與歷史效率估算合理人力。';
+    if(document.getElementById('view-entry')?.classList.contains('active'))document.getElementById('pageTitle').textContent=navText?.textContent||'IE';
+   };
+   localizeIE();document.getElementById('langBtn')?.addEventListener('change',localizeIE);
+   nav?.addEventListener('click',()=>{window.switchEntryTab?.('ie');});
+  }
   feedback('準備連線…');
   setInterval(()=>{if(document.visibilityState==='visible')void refresh();},300000);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&lastSuccess&&Date.now()-lastSuccess>300000)void refresh();});
