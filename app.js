@@ -9,8 +9,8 @@ const translations = {
 };
 Object.assign(translations.zh,{period:'每日產效比較',weighted:'選擇兩個生產日 · 8H正常班與人時產出',baselineStart:'A日 · 基準日',compareStart:'B日 · 比較日',compareTitle:'A日與B日產效比較',swapDates:'交換日期'});
 Object.assign(translations.vn,{period:'So sánh hiệu suất theo ngày',weighted:'Chọn hai ngày sản xuất · 8H và đôi/giờ công',baselineStart:'Ngày A · Ngày gốc',compareStart:'Ngày B · Ngày so sánh',compareTitle:'So sánh hiệu suất ngày A và B',swapDates:'Đổi ngày'});
-Object.assign(translations.zh,{staffLink:'🇻🇳 幹部填報頁'});
-Object.assign(translations.vn,{staffLink:'🇻🇳 Trang nhập liệu'});
+Object.assign(translations.zh,{staffLink:'🇻🇳 幹部填報頁',modelBenchmarkTitle:'型體歷史平均對照',modelBenchmarkSub:'依B日前同款實際完成量比較，分開呈現底加與成型；不足3筆不推估。'});
+Object.assign(translations.vn,{staffLink:'🇻🇳 Trang nhập liệu',modelBenchmarkTitle:'Đối chiếu trung bình lịch sử theo mã',modelBenchmarkSub:'So sánh sản lượng mã giày trước ngày B, riêng GCĐ và TH; cần ít nhất 3 bản ghi.'});
 translations.en=Object.assign({},window.FACTORY_EN?.core||{},{staffLink:'🇻🇳 Staff reporting page'});
 const T=k=>translations[state.lang]?.[k]||translations.zh[k]||k;
 const tr=(zh,vn,en)=>state.lang==='zh'?zh:state.lang==='vn'?vn:(en??window.FACTORY_EN?.translate?.(zh)??zh);
@@ -132,6 +132,7 @@ function renderTrends(){if(!state.daily.length){$('dailyChart').innerHTML=empty(
 function renderPlanner(){$('plannerPeriod').textContent=tr('HC試算採用B日實際人時產出：','Dùng hiệu suất thực tế ngày B: ')+displayDate($('compStart').value);const b=periods().b;for(const process of ['gc','asm']){const rate=b[process+'Rate'],hc=Number($(process+'HC').value),target=Number($(process+'Target').value),hours=Number($(process+'Hours').value);if(!(rate>0&&hc>0&&target>0&&hours>0)){$(process+'Plan').innerHTML=empty(tr('請先匯入有效資料並輸入正數。','Nhập dữ liệu hợp lệ và giá trị dương.'));continue;}const expected=Math.round(rate*hc*hours),needed=Math.ceil(target/(rate*hours));const scenarios=[[.9,tr('保守','Thận trọng')],[1,tr('標準','Tiêu chuẩn')],[1.1,tr('挑戰','Thử thách')]];$(process+'Plan').innerHTML=`<div class="plan-main"><small>${tr('標準情境預估8H產量','Sản lượng 8H dự kiến')}</small><div class="metric">${int(expected)} <small>${tr('雙','đôi')}</small></div><small>${tr('歷史基準','Chuẩn lịch sử')}: ${fmt(rate,3)} ${tr('雙／人時','đôi/giờ công')} · ${tr('目標差距','Chênh lệch mục tiêu')}: ${expected-target>=0?'+':''}${int(expected-target)}</small></div><div class="plan-scenarios">${scenarios.map(([factor,label])=>`<div class="scenario"><strong>${label} ×${factor.toFixed(1)}</strong><b>${int(Math.round(rate*hc*hours*factor))}</b><small>${tr('達標需','HC cần')}: ${int(Math.ceil(target/(rate*hours*factor)))} HC</small></div>`).join('')}</div><div class="plan-foot">${tr('標準情境達標HC','HC cần theo kịch bản tiêu chuẩn')}: <strong>${needed}</strong> · ${tr('較預定HC差異','So với HC dự kiến')}: <strong>${needed-hc>=0?'+':''}${int(needed-hc)}</strong><br>${tr('僅為線性試算，不代表增加人力即可達標。','Chỉ là mô phỏng tuyến tính, không bảo đảm đạt mục tiêu khi tăng người.')}</div>`;}}
 function renderModels(){
  $('modelPeriod').textContent=compareDateLabel();
+ $('modelBenchmarkTable').innerHTML=window.FactoryInsightEngine?.renderBenchmarks({state,dateA:$('baseStart').value,dateB:$('compStart').value,esc,fmt,int})||empty();
  if(!state.models.length){$('modelTable').innerHTML=empty(tr('尚無型體明細，請在每日登錄新增型體。','Chưa có dữ liệu mã giày. Hãy nhập mã giày.'));return;}
  const aDate=$('baseStart').value,bDate=$('compStart').value;
  const map=new Map();
