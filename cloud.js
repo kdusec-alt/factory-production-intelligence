@@ -82,7 +82,7 @@ Object.assign(translations.en,window.FACTORY_EN?.cloud||{});
     $('cloudPull').addEventListener('click',()=>{void pull();});
     $('cloudToken').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();void connect();}});
     window.addEventListener('factory:local-saved',schedule);
-    $('langBtn').addEventListener('click',()=>{markConnectedOrNot();});
+    $('langBtn').addEventListener('change',()=>{markConnectedOrNot();});
     badge(trc('未連線','Chưa kết nối'));
     render();
   }
