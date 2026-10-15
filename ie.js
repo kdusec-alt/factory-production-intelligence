@@ -12,6 +12,7 @@ const vn={
  ieRegistryTitle:'Danh mục mã giày và định mức IE',ieRegistrySub:'Thêm mã giày và phiên bản IE theo ngày hiệu lực; xóa IE không xóa dữ liệu sản xuất.',ieMixTitle:'Định mức IE × Cơ cấu mã giày thực tế',ieMixSub:'Tính nhân lực từ sản lượng từng mã và định mức IE có hiệu lực; không suy đoán khi thiếu dữ liệu.',ieEdit:'Thêm / sửa tiêu chuẩn IE'
 };
 Object.assign(translations.zh,zh);Object.assign(translations.vn,vn);
+Object.assign(translations.en,window.FACTORY_EN?.ie||{});
 let editingKey=null,registryRows=[],initialized=false;
 const ieKey=x=>String(x.model||'').toUpperCase()+'|'+String(x.effectiveDate||'');
 const allIE=()=>Array.isArray(state.ieStandards)?state.ieStandards:[];
