@@ -30,6 +30,7 @@ function validate(raw:unknown):Record<string,unknown>{
  const {production_date,plant,process,output_total,normal_hc,normal_hours,ot_output,ot_hc,ot_hours,no_ot,models,operator_name,notes}=r;
  if(!validDate(production_date))throw new Error('Invalid production date');
  if(plant!=='NBY')throw new Error('Only NBY factory is supported');
+ if('factory' in r||'line' in r)throw new Error('Outdated form: reload the NBY-only page');
  if(!['gc','asm'].includes(String(process)))throw new Error('Invalid process');
  if(!isInt(output_total,0,20000)||!isInt(normal_hc,1,1000)||!isNum(normal_hours,.5,16))throw new Error('Invalid output, HC or normal hours');
  if(typeof operator_name!=='string'||operator_name.trim().length<2||operator_name.length>80)throw new Error('Operator is required');
