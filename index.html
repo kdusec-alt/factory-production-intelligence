@@ -6,12 +6,13 @@
   <meta name="color-scheme" content="light" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.github.com; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <title>Factory Production Intelligence | 產效智能管理</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=20" />
   <script src="data/factory-data.js" defer></script>
-  <script src="app.js" defer></script>
-  <script src="records.js" defer></script>
-  <script src="ie.js" defer></script>
-  <script src="cloud.js" defer></script>
+  <script src="english.js?v=20" defer></script>
+  <script src="app.js?v=20" defer></script>
+  <script src="records.js?v=20" defer></script>
+  <script src="ie.js?v=20" defer></script>
+  <script src="cloud.js?v=20" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -30,9 +31,9 @@
       <div class="side-bottom"><div class="privacy-icon">◈</div><strong data-i18n="localProcessing">本機安全分析</strong><p data-i18n="localNote">Excel僅在瀏覽器內處理，不會上傳伺服器。</p><span class="version">GITHUB PAGES · V1.6</span></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="breadcrumbs">OPERATIONS <span>/</span> <span id="crumb">PRODUCTION DASHBOARD</span></div><div class="top-actions"><span class="status-dot"></span><span class="top-status" data-i18n="offline">LOCAL ANALYTICS</span><button id="langBtn" class="outline small">Tiếng Việt</button></div></header>
+      <header class="topbar"><div class="breadcrumbs">OPERATIONS <span>/</span> <span id="crumb">PRODUCTION DASHBOARD</span></div><div class="top-actions"><span class="status-dot"></span><span class="top-status" data-i18n="offline">LOCAL ANALYTICS</span><select id="langBtn" class="outline small" aria-label="Language / 語言 / Ngôn ngữ"><option value="zh">繁體中文</option><option value="vn">Tiếng Việt</option><option value="en">English</option></select></div></header>
       <div class="page">
-        <div class="headline"><div><div class="eyebrow" data-i18n="eyebrow">OPERATIONAL PERFORMANCE CENTER</div><h1 id="pageTitle" data-i18n="overviewTitle">產效智能管理儀表板</h1><p class="lead" id="pageSubtitle" data-i18n="overviewSub">8H正常班、OT、HC與品質的整合分析，協助管理每日產出及生產穩定性。</p></div><div class="headline-actions"><button id="demoBtn" class="outline" data-i18n="demo">重新載入資料</button><button id="downloadVN" class="outline" data-i18n="downloadVN">匯出備份</button><button id="quickEntry" class="primary" type="button" data-i18n="quickEntry">＋ 新增日報</button><a href="staff.html" class="outline" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px">🇻🇳 幹部填報頁</a><label class="outline upload-label" for="fileInput"><span>↑</span><span data-i18n="upload">匯入Excel</span></label><input id="fileInput" type="file" accept=".xlsx,.csv" multiple hidden /></div></div>
+        <div class="headline"><div><div class="eyebrow" data-i18n="eyebrow">OPERATIONAL PERFORMANCE CENTER</div><h1 id="pageTitle" data-i18n="overviewTitle">產效智能管理儀表板</h1><p class="lead" id="pageSubtitle" data-i18n="overviewSub">8H正常班、OT、HC與品質的整合分析，協助管理每日產出及生產穩定性。</p></div><div class="headline-actions"><button id="demoBtn" class="outline" data-i18n="demo">重新載入資料</button><button id="downloadVN" class="outline" data-i18n="downloadVN">匯出備份</button><button id="quickEntry" class="primary" type="button" data-i18n="quickEntry">＋ 新增日報</button><a href="staff.html" class="outline" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px" data-i18n="staffLink">🇻🇳 幹部填報頁</a><label class="outline upload-label" for="fileInput"><span>↑</span><span data-i18n="upload">匯入Excel</span></label><input id="fileInput" type="file" accept=".xlsx,.csv" multiple hidden /></div></div>
         <div class="import-strip"><div class="file-state"><span class="file-icon">▣</span><div><strong id="sourceTitle">尚未匯入資料</strong><small id="sourceDetail">支援 Master_Daily / Model_Data / Quality_Issues / Sheet2</small></div></div><div class="file-state-right"><span id="datasetTag" class="tag muted">NO DATA</span><button class="text-button" id="clearBtn" data-i18n="clear">資料管理</button></div></div>
         <div id="message" class="message hidden" role="status"></div>
         <div class="storage-strip" id="storageStrip"><span class="storage-dot"></span><span id="dbStatus">正在檢查本機資料庫…</span><span class="cloud-status-pill" id="cloudTopStatus">GitHub: 未連線</span><button id="goEntry" type="button" class="text-button" data-i18n="entry">每日登錄</button></div>
