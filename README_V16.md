@@ -80,3 +80,13 @@ The private staff/manager URLs are unchanged; reload the page to get V1.8. Brows
 - Opening `index.html` without the private manager key retains the legacy single-browser mode with an explicit warning. Local unsynced changes on other devices are **not** included in the migration.
 - Historical quality issues are archived reference only; no cloud quality-edit workflow has been implemented yet.
 - Important: the two processes represent sequential work and must not be combined as final finished pairs.
+
+## V1.14 (2026-10-15): Automatic cloud Excel import and multi-supervisor viewing
+
+- On the private manager dashboard `index.html#admin=<private-key>`, selecting supported XLSX/CSV immediately parses, validates and commits the normalized rows to Supabase. No separate Save button or GitHub/PAT step. Only show cloud success after the database RPC acknowledges a transaction.
+- Imported Excel days, model rows and quality issues are kept in private RLS-enabled tables. Each import has an immutable audit log with file names, parsed payload, source credential hash and timestamp; original Excel binary is **not** uploaded.
+- The import transaction upserts only the dates contained in the file; it does not erase other dates or directly modify staff `production_entries`.
+- Full dashboard and manager report read both sources; the **most recently updated source per date and process** wins. Manual staff entries are never deleted; a newer staff save can supersede Excel and a newer Excel import can supersede staff values for the same process/date. Quality sheet, if included, becomes the latest cloud quality dataset; otherwise the previous quality dataset remains.
+- An admin can generate one private read-only viewer URL per supervisor and revoke it from the dashboard. Viewer links have no permission to save reports, import Excel, or manage accounts. Keys are never stored in public source code.
+- Managers opening a URL load the current cloud data immediately; open dashboards auto-refresh every five minutes, and when a background tab becomes visible.
+- A failed import does not change cloud data or silently fall back to a local save. Invalid model/day totals are rejected as a whole. The existing local-only mode (URL without a private fragment) is unchanged and is **not** cloud-synced.

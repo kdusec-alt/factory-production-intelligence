@@ -80,3 +80,7 @@ body.cloud-manager #cloudTopStatus{background:#e8f6ef;color:#11663b;border-color
 body.cloud-manager #refreshCloud[disabled]{opacity:.55;cursor:wait}
 
 body.cloud-manager #cloudTopStatus[data-state="error"]{background:#fff0f0;color:#a12121;border-color:#eab6b6}
+
+/* V1.14: viewers can only read shared Supabase data; admin Excel imports auto-save. */
+body.cloud-viewer label[for="fileInput"],body.cloud-viewer #fileInput{display:none!important}
+body.cloud-manager #fileInput:disabled+span{opacity:.5}

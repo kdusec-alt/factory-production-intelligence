@@ -76,6 +76,43 @@ function parseRaw(rows){const daily=[],models=[];for(const r of rows.slice(1)){c
 function parseModels(rows){return rows.slice(1).map(r=>({date:dateStr(r[0]),model:String(r[1]??'').trim(),gcTotal:nval(r[2]),gcOT:nval(r[3]),gcNormal:nval(r[4]),asmTotal:nval(r[5]),asmOT:nval(r[6]),asmNormal:nval(r[7])})).filter(r=>r.date&&r.model);}
 function parseQuality(rows){return rows.slice(1).filter(r=>nval(r[0])!==null&&r[4]!==null).map(r=>({page:nval(r[0]),type:r[1],area:r[2],areaVN:r[3],model:r[4],issue:r[5],descriptionVN:r[6],descriptionZH:r[7],affected:nval(r[8]),allocation:r[9],direct:r[10],senior:r[11],cause:r[12],caution:r[13]}));}
 function parseCsv(text){const rows=[];let row=[],v='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quoted&&text[i+1]==='"'){v+='"';i++;}else quoted=!quoted;}else if(c===','&&!quoted){row.push(v);v='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&text[i+1]==='\n')i++;row.push(v);rows.push(row);row=[];v='';}else v+=c;}if(v||row.length){row.push(v);rows.push(row);}if(!rows.length)return [];const headers=rows[0].map(x=>x.toLowerCase().trim());const get=(r,key)=>r[headers.indexOf(key)]??null;return rows.slice(1).map(r=>normDaily({date:dateStr(get(r,'date')),gcTotal:get(r,'gc total'),gcHC:get(r,'gc hc 8h'),gcOT:get(r,'gc ot'),gcOTHC:get(r,'gc ot hc'),gcHours:get(r,'gc hours'),asmTotal:get(r,'asm total'),asmHC:get(r,'asm hc 8h'),asmOT:get(r,'asm ot'),asmOTHC:get(r,'asm ot hc'),asmHours:get(r,'asm hours'),otHours:get(r,'ot hours')})).filter(r=>r.date);}
+
+/* V1.14: parse an upload without touching current dashboard or IndexedDB.
+   The cloud API validates again and commits the entire import atomically. */
+async function parseCloudExcelFiles(files){
+ if(!Array.isArray(files)||!files.length||files.length>10)throw new Error('請一次選擇 1–10 個 Excel / CSV 檔案。');
+ const daily=new Map(),models=new Map(),quality=new Map(),filenames=[];
+ let hasQualitySheet=false;
+ for(const file of files){
+  if(file.size>12*1024*1024)throw new Error(file.name+': 檔案超過 12 MB');
+  if(file.name.length>120)throw new Error('檔案名稱太長');
+  let newDaily=[],newModels=[],newQuality=[];
+  if(/\.csv$/i.test(file.name)){newDaily=parseCsv(await file.text());if(!newDaily.length)throw new Error(file.name+': CSV 格式無法辨識');}
+  else if(/\.xlsx$/i.test(file.name)){
+   const parsed=await readXlsx(await file.arrayBuffer());
+   const master=parsed.sheets.Master_Daily?parseMaster(parsed.sheets.Master_Daily):[];
+   const raw=parsed.sheets.Sheet2?parseRaw(parsed.sheets.Sheet2):{daily:[],models:[]};
+   const dates=new Set(master.map(r=>r.date));
+   newDaily=master.concat(raw.daily.filter(r=>!dates.has(r.date)));
+   newModels=parsed.sheets.Model_Data?parseModels(parsed.sheets.Model_Data):[];
+   const keys=new Set(newModels.map(r=>r.date+'|'+r.model));
+   newModels.push(...raw.models.filter(r=>!keys.has(r.date+'|'+r.model)));
+   if(parsed.names.includes('Quality_Issues')){hasQualitySheet=true;newQuality=parseQuality(parsed.sheets.Quality_Issues||[]);}
+   if(!newDaily.length&&!hasQualitySheet)throw new Error(file.name+': 缺少可辨識的 Master_Daily、Sheet2 或 Quality_Issues');
+  }else throw new Error(file.name+': 僅支援 .xlsx 或 .csv');
+  for(const r of newDaily)daily.set(r.date,r);
+  for(const r of newModels)models.set(r.date+'|'+r.model,r);
+  for(const r of newQuality)quality.set([r.page,r.model,r.issue,r.descriptionVN].join('|'),r);
+  filenames.push(file.name);
+ }
+ const selectedDates=new Set(daily.keys());
+ const payload={daily:[...daily.values()].sort((a,b)=>a.date.localeCompare(b.date)),
+  models:[...models.values()].filter(m=>selectedDates.has(m.date)),
+  quality:[...quality.values()],has_quality_sheet:hasQualitySheet};
+ if(!payload.daily.length&&!payload.has_quality_sheet)throw new Error('沒有可匯入的資料');
+ return {payload,filenames};
+}
+
 async function importFiles(files){if(!files.length)return;const daily=new Map(state.demo?[]:state.daily.map(r=>[r.date,r]));const models=new Map(state.demo?[]:state.models.map(r=>[r.date+'|'+r.model,r]));const quality=new Map(state.demo?[]:state.quality.map(r=>[r.page+'|'+r.model+'|'+r.issue+'|'+r.descriptionVN,r]));const names=state.demo?[]:state.files.slice();const notes=state.demo?[]:state.importNotes.slice();
  for(const file of files){let newDaily=[],newModels=[],newQuality=[];
   if(/\.csv$/i.test(file.name)){newDaily=parseCsv(await file.text());if(!newDaily.length)throw new Error(file.name+': CSV format invalid (see README).');}
@@ -154,7 +191,7 @@ function render(){document.querySelectorAll('[data-i18n]').forEach(el=>el.textCo
 function setView(name){if(window.FactoryCloudDashboard?.enabled&&name==='entry')name='overview';state.view=name;document.querySelectorAll('.nav-link').forEach(el=>el.classList.toggle('active',el.dataset.view===name));document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id==='view-'+name));const nav=document.querySelector(`.nav-link[data-view="${name}"]`);$('pageTitle').textContent=nav?nav.lastElementChild.textContent:T('overviewTitle');$('pageSubtitle').textContent=name==='overview'?T('overviewSub'):T({entry:'entrySub',trends:'dailyTrendSub',planner:'capacitySub',models:'modelSub',quality:'qualitySub',audit:'auditSub'}[name]||'overviewSub');$('crumb').textContent=name.toUpperCase();$('filters').style.display=name==='quality'||name==='audit'||name==='entry'?'none':'flex';}
 function exportDaily(){if(!state.daily.length)return;const head=['Date','GC Total','GC HC 8H','GC OT','GC 8H Output','GC Prs/Man-hour','ASM Total','ASM HC 8H','ASM OT','ASM 8H Output','ASM Prs/Man-hour'];const rows=state.daily.map(r=>[r.date,r.gcTotal,r.gcHC,r.gcOT,r.gcNormal,r.gcNormal!==null&&r.gcHC>0?r.gcNormal/(r.gcHC*r.gcHours):'',r.asmTotal,r.asmHC,r.asmOT,r.asmNormal,r.asmNormal!==null&&r.asmHC>0?r.asmNormal/(r.asmHC*r.asmHours):'']);const csv='\ufeff'+[head,...rows].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='factory-production-daily-analysis.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function clearAll(){state.daily=[];state.models=[];state.quality=[];state.ieStandards=[];state.files=[];state.importNotes=[];state.demo=false;state.hosted=false;clearMessage();render();}
-function bind(){document.querySelectorAll('.nav-link').forEach(el=>el.addEventListener('click',()=>setView(el.dataset.view)));$('langBtn').addEventListener('change',()=>{state.lang=$('langBtn').value;try{localStorage.setItem('factory-main-language',state.lang);const u=new URL(location.href);u.searchParams.set('lang',state.lang);history.replaceState(null,'',u.pathname+u.search+u.hash);}catch{}render();setView(state.view);});$('demoBtn').addEventListener('click',async()=>{if(!confirm(tr('這會覆蓋本機目前的所有資料，確定還原初始資料？','Thao tác sẽ ghi đè toàn bộ dữ liệu hiện tại. Khôi phục dữ liệu gốc?')))return;const before=window.captureFactoryState?.();await loadBundled();await window.persistFactoryState?.('Restore original data',before);});$('downloadVN').addEventListener('click',()=>{window.exportFactoryBackup?.();});$('clearBtn').addEventListener('click',()=>{setView('entry');window.switchEntryTab?.('backup');});$('downloadDaily').addEventListener('click',exportDaily);$('areaFilter').addEventListener('change',renderQuality);['baseStart','compStart'].forEach(id=>$(id).addEventListener('change',render));$('swapDates').addEventListener('click',()=>{const a=$('baseStart').value;$('baseStart').value=$('compStart').value;$('compStart').value=a;render();});['gcHC','gcTarget','gcHours','asmHC','asmTarget','asmHours'].forEach(id=>$(id).addEventListener('input',renderPlanner));$('fileInput').addEventListener('change',async e=>{const files=[...e.target.files];e.target.value='';if(!files.length)return;showMessage(tr('正在讀取Excel，請稍候…','Đang đọc Excel, vui lòng chờ…'));try{await importFiles(files);await window.persistFactoryState?.('Legacy Excel import');showMessage(tr('匯入成功：'+files.map(f=>f.name).join('、')+'。檔案僅在瀏覽器內解析。','Đã nhập: '+files.map(f=>f.name).join(', ')+'. Dữ liệu chỉ được xử lý trong trình duyệt.','Imported: '+files.map(f=>f.name).join(', ')+'. Files were processed only in this browser.'));}catch(err){showMessage(tr('匯入失敗：','Không thể nhập: ')+String(err.message||err),true);console.error(err);}});}
+function bind(){document.querySelectorAll('.nav-link').forEach(el=>el.addEventListener('click',()=>setView(el.dataset.view)));$('langBtn').addEventListener('change',()=>{state.lang=$('langBtn').value;try{localStorage.setItem('factory-main-language',state.lang);const u=new URL(location.href);u.searchParams.set('lang',state.lang);history.replaceState(null,'',u.pathname+u.search+u.hash);}catch{}render();setView(state.view);});$('demoBtn').addEventListener('click',async()=>{if(!confirm(tr('這會覆蓋本機目前的所有資料，確定還原初始資料？','Thao tác sẽ ghi đè toàn bộ dữ liệu hiện tại. Khôi phục dữ liệu gốc?')))return;const before=window.captureFactoryState?.();await loadBundled();await window.persistFactoryState?.('Restore original data',before);});$('downloadVN').addEventListener('click',()=>{window.exportFactoryBackup?.();});$('clearBtn').addEventListener('click',()=>{setView('entry');window.switchEntryTab?.('backup');});$('downloadDaily').addEventListener('click',exportDaily);$('areaFilter').addEventListener('change',renderQuality);['baseStart','compStart'].forEach(id=>$(id).addEventListener('change',render));$('swapDates').addEventListener('click',()=>{const a=$('baseStart').value;$('baseStart').value=$('compStart').value;$('compStart').value=a;render();});['gcHC','gcTarget','gcHours','asmHC','asmTarget','asmHours'].forEach(id=>$(id).addEventListener('input',renderPlanner));$('fileInput').addEventListener('change',async e=>{const files=[...e.target.files];e.target.value='';if(!files.length)return;showMessage(tr('正在讀取Excel，請稍候…','Đang đọc Excel, vui lòng chờ…'));try{if(window.FactoryCloudDashboard?.enabled){await window.FactoryCloudDashboard.importFiles(files,parseCloudExcelFiles);return;}await importFiles(files);await window.persistFactoryState?.('Legacy Excel import');showMessage(tr('匯入成功：'+files.map(f=>f.name).join('、')+'。檔案僅在瀏覽器內解析。','Đã nhập: '+files.map(f=>f.name).join(', ')+'. Dữ liệu chỉ được xử lý trong trình duyệt.','Imported: '+files.map(f=>f.name).join(', ')+'. Files were processed only in this browser.'));}catch(err){showMessage(tr('匯入失敗：','Không thể nhập: ')+String(err.message||err),true);console.error(err);}});}
 
 window.applyFactoryCloudData=function(cloud){
  const previousA=$('baseStart').value,previousB=$('compStart').value;
@@ -168,8 +205,8 @@ window.applyFactoryCloudData=function(cloud){
  }).sort((a,b)=>a.date.localeCompare(b.date));
  state.quality=cloud.quality.map((q,i)=>({...q,id:q.id||'legacy-'+i}));
  state.ieStandards=Array.isArray(cloud.ieStandards)?cloud.ieStandards:[];
- state.files=['Supabase · NBY cloud production'];
- state.importNotes=['Live cloud process records; historical quality records are read-only.'];
+ state.files=['Supabase · 雲端共用資料'+(cloud.latestImport?.filenames?.length?' · '+cloud.latestImport.filenames.join(', '):'')];
+ state.importNotes=['主管雲端即時資料；Excel 匯入成功後自動儲存，其他主管共用最新版本。'];
  state.demo=false;state.hosted=true;state.cloudMode=true;
  setDefaultPeriods();
  if(days.has(previousA))$('baseStart').value=previousA;
