@@ -93,10 +93,10 @@
    if(!response.ok||json.ok!==true)throw Error(json.error||'HTTP '+response.status);
    const normalized=transform(json.rows,json.excel_days||[]);
    if(typeof window.applyFactoryCloudData!=='function')throw Error('Analysis engine not ready');
-   window.applyFactoryCloudData({...normalized,quality:Array.isArray(json.excel_quality?.quality)?json.excel_quality.quality:Array.isArray(json.legacy_quality)?json.legacy_quality:[],ieStandards:Array.isArray(json.ie_standards)?json.ie_standards:Array.isArray(json.legacy_ie_standards)?json.legacy_ie_standards:[],latestImport:json.excel_latest||null});
+   window.applyFactoryCloudData({...normalized,quality:Array.isArray(json.excel_quality?.quality)?json.excel_quality.quality:Array.isArray(json.legacy_quality)?json.legacy_quality:[],ieStandards:[...new Map([...(Array.isArray(json.legacy_ie_standards)?json.legacy_ie_standards:[]),...(Array.isArray(json.ie_standards)?json.ie_standards:[])].map(r=>[String(r.model).trim().toUpperCase()+'|'+(r.effectiveDate||''),r])).values()],latestImport:json.excel_latest||null});
    lastSuccess=Date.now();
    const time=new Date().toLocaleString(document.documentElement.lang==='en'?'en-US':document.documentElement.lang==='vi'?'vi-VN':'zh-TW');
-   feedback('已同步 '+time+' · '+normalized.manualCount+' 筆填報 / '+normalized.excelCount+' 筆 Excel'+(json.truncated?' · 超過2000筆，請聯絡管理員':''));
+   feedback('已同步 '+time+' · '+normalized.daily.length+' 個生產日 · IE '+state.ieStandards.length+' 筆'+(json.truncated?' · 超過2000筆，請聯絡管理員':''),'ok');
    return true;
   }catch(error){feedback(error.name==='AbortError'?'連線逾時':String(error.message||error),'error');return false;}
   finally{clearTimeout(timeout);busy=false;if(refreshButton)refreshButton.disabled=false;}
@@ -136,8 +136,10 @@
 
  async function saveIE(standard){
   if(!isAdmin)throw new Error('只有管理員可更新IE標準');
+  feedback('IE 正在儲存雲端…');
   const result=await post({action:'save_ie',standard},15000);
   if(!await refresh())throw new Error('IE標準已儲存雲端，但畫面同步失敗，請手動更新雲端');
+  feedback('IE 已儲存雲端 · '+state.daily.length+' 個生產日 · IE '+state.ieStandards.length+' 筆','ok');
   return result;
  }
  async function deleteIE(record){
@@ -221,7 +223,7 @@
     const vi=lang==='vi',en=lang==='en';
     if(navText)navText.textContent=vi?'Quản lý IE':en?'IE Standards':'IE 標準管理';
     if(heading)heading.textContent=vi?'Định mức IE và nhân lực':en?'Manual IE standards and HC':'IE 人工總秒值與合理 HC';
-    if(sub)sub.textContent=vi?'Lưu tự động lên đám mây. Tính nhân lực theo tổng giây thao tác và hiệu suất lịch sử.':en?'Cloud-saved manual work-content seconds, automatic HC estimates and history-based efficiency.':'人工總秒值自動儲存雲端；依型體組合、實際HC與歷史效率估算合理人力。';
+    if(sub)sub.textContent=vi?'Lưu tự động lên đám mây. Tính nhân lực theo tổng giây thao tác và hiệu suất lịch sử.':en?'Cloud-saved IE standards, actual Member and model mix determine 8H targets and attainment.':'儲存後自動上傳雲端；依IE標準、實際人員及型體配比計算8H應產與達成率。';
     if(document.getElementById('view-entry')?.classList.contains('active'))document.getElementById('pageTitle').textContent=navText?.textContent||'IE';
    };
    localizeIE();document.getElementById('langBtn')?.addEventListener('change',localizeIE);
@@ -232,5 +234,12 @@
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&lastSuccess&&Date.now()-lastSuccess>300000)void refresh();});
   void refresh();
  }
+ document.addEventListener('DOMContentLoaded',()=>{
+  if(enabled)return;
+  const notice=$('modeNotice');if(!notice)return;
+  notice.textContent='目前未連線雲端：本機舊資料仍保留。請使用私人管理網址查看完整雲端紀錄；新增及修改須連線後儲存。 ';
+  const connect=document.createElement('button');connect.type='button';connect.className='outline';connect.textContent='連線雲端';
+  connect.addEventListener('click',()=>{const value=window.prompt('貼上你原有的私人雲端管理／唯讀網址（不會寫入程式或本機資料庫）：');if(!value)return;try{const u=new URL(value);const f=new URLSearchParams(u.hash.slice(1));if(u.origin!==location.origin||u.pathname!==location.pathname&&!u.pathname.endsWith('/index.html')||!(f.get('admin')?.length>=32||f.get('viewer')?.length>=32))throw Error();location.href='./index.html'+u.hash;}catch{window.alert('網址無效，請使用此系統的完整私人網址。');}});notice.append(connect);
+ });
  window.FactoryCloudDashboard=Object.freeze({enabled,isAdmin,activate,refresh,importFiles,saveIE,deleteIE,migrateLocalIE});
 })();

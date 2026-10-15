@@ -65,6 +65,8 @@ window.persistFactoryState=async(action='External import',before=null)=>{
  try{await persist(action,before);render();}catch(e){showMessage(tr('本機儲存失敗：','Lưu trên thiết bị thất bại: ')+e.message,true);throw e;}
 };
 async function commit(action,mutate){
+ if(!window.FactoryCloudDashboard?.enabled){showMessage('請先使用私人雲端網址連線；目前資料仍保留，本次未寫入，避免只存本機。',true);return;}
+
  if(window.FactoryCloudDashboard?.enabled){showMessage('主管雲端模式為唯讀；請使用幹部專用填報頁儲存正式資料。',true);return;}
  if(busy)return;busy=true;const before=allState();
  try{mutate();state.files=['Browser Database · '+tr('每日登錄','Nhập hằng ngày')];state.hosted=false;state.demo=false;await persist(action,before);render();showMessage(tr('已成功儲存並更新分析：','Đã lưu và cập nhật phân tích: ')+action);}

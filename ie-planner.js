@@ -1,191 +1,87 @@
 'use strict';
-/* V1.16 — IE manual-work-content HC ↔ output planner.
- * Seconds = sum of human work-content across stations per pair; NOT line takt.
- * Scenario values are estimates, never approved staffing/production targets.
- * This module is read-only and never mutates cloud or daily production records. */
-(() => {
- const original=window.renderIEModels;
- const id=x=>document.getElementById(x);
+/* IE standard target: shared process members counted once. Model mix is based on
+ * regular-shift pair shares, never each model receiving the full line headcount. */
+(()=>{
  const L=(zh,vn,en)=>state.lang==='vn'?vn:state.lang==='en'?en:zh;
- const n=x=>x===null||x===undefined||String(x).trim()===''?null:Number.isFinite(Number(x))?Number(x):null;
- const positive=x=>Number.isFinite(x)&&x>0;
- const integer=x=>Number.isFinite(x)?Math.round(x).toLocaleString(state.lang==='vn'?'vi-VN':state.lang==='en'?'en-US':'zh-TW'):'—';
- const decimal=(x,d=1)=>Number.isFinite(x)?x.toLocaleString(state.lang==='vn'?'vi-VN':state.lang==='en'?'en-US':'zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
- const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const num=x=>x===null||x===undefined||String(x).trim()===''?null:Number.isFinite(Number(x))?Number(x):null;
  const key=x=>String(x||'').trim().toUpperCase();
- const ieAt=(model,date)=>{
-  const all=Array.isArray(state.ieStandards)?state.ieStandards:[];
-  return all.filter(x=>key(x.model)===key(model)&&(!x.effectiveDate||x.effectiveDate<=date))
-   .sort((a,b)=>String(b.effectiveDate||'').localeCompare(String(a.effectiveDate||'')))[0]||null;
- };
- function workload(p,day){
-  const hours=n(day?.[p+'Hours']),dayPairs=n(day?.[p+'Normal']),hc=n(day?.[p+'HC']);
-  const ms=state.models.filter(m=>m.date===day?.date);
-  let pairsKnown=0,seconds=0;const unknown=[],missingIE=[],invalid=[];
-  for(const m of ms){
-   const pairs=n(m[p+'Normal']);
-   if(pairs===null){unknown.push(key(m.model));continue;}
-   if(pairs<0){invalid.push(key(m.model));continue;}
-   pairsKnown+=pairs;
-   if(!pairs)continue;
-   const sec=n(ieAt(m.model,m.date)?.[p+'Cycle']);
-   if(!positive(sec)){missingIE.push(key(m.model));continue;}
-   seconds+=pairs*sec;
-  }
-  const reconciled=dayPairs!==null&&dayPairs>0&&Math.abs(pairsKnown-dayPairs)<0.5;
-  const provisional=reconciled&&unknown.length>0;
-  const valid=positive(hours)&&ms.length>0&&reconciled&&!invalid.length&&!missingIE.length&&positive(seconds);
-  const reasons=[];
-  if(!ms.length)reasons.push(L('缺少型體日報','Thiếu dữ liệu mã giày','Missing model records'));
-  if(!positive(hours))reasons.push(L('正常班工時不足','Thiếu giờ ca chính','Missing regular-shift hours'));
-  if(!positive(dayPairs))reasons.push(L('正常班雙數不足','Thiếu số đôi ca chính','Missing regular-shift pairs'));
-  if(!reconciled&&positive(dayPairs))reasons.push(L('型體雙數與日報不一致','Sản lượng mã giày không khớp báo cáo','Model pairs do not reconcile'));
-  if(missingIE.length)reasons.push(L('缺IE秒值：','Thiếu giây IE: ','Missing IE seconds: ')+[...new Set(missingIE)].join(', '));
-  if(invalid.length)reasons.push(L('型體雙數異常','Số đôi không hợp lệ','Invalid model pairs'));
-  if(provisional)reasons.push(L('部分型體未填雙數；已知型體合計等於日報，暫以其他型體0雙試算，請補登確認。',
-    'Một số mã thiếu số đôi; tổng đã biết khớp báo cáo, tạm giả định các mã khác 0 đôi. Cần xác nhận.',
-    'Some model pairs are blank; known pairs reconcile, so zero is assumed for the remaining models in this preview only. Confirm source data.'));
-  return {p,date:day?.date||'',hours,dayPairs,hc:positive(hc)?hc:null,seconds,avgSeconds:valid?seconds/dayPairs:null,valid,provisional,reasons,unknown};
+ const number=(x,d=1)=>Number.isFinite(x)?x.toLocaleString(state.lang==='vn'?'vi-VN':state.lang==='en'?'en-US':'zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+ const standard=(model,date)=>(state.ieStandards||[]).filter(x=>key(x.model)===key(model)&&(!x.effectiveDate||x.effectiveDate<=date)).sort((a,b)=>String(b.effectiveDate||'').localeCompare(String(a.effectiveDate||'')))[0];
+ function calculate(p,day,membersOverride=null,hoursOverride=null){
+  const members=membersOverride??num(day?.[p+'HC']),hours=hoursOverride??num(day?.[p+'Hours']);
+  const actual=num(day?.[p+'Normal']),date=day?.date;
+  const rows=state.models.filter(m=>m.date===date).map(m=>{
+   const total=num(m[p+'Total']),pairs=num(m[p+'Normal']);
+   return {model:key(m.model),pairs,seconds:num(standard(m.model,date)?.[p+'Cycle']),total};
+  }).filter(m=>m.total!==null||m.pairs!==null);
+  const errors=[];
+  if(!(members>0))errors.push(L('缺少正常班人員','Thiếu nhân lực ca chính','Regular-shift members missing'));
+  if(!(hours>0))errors.push(L('缺少正常班工時','Thiếu giờ ca chính','Regular-shift hours missing'));
+  if(actual===null||actual<0)errors.push(L('正常班產量／OT拆分待補','Thiếu sản lượng ca chính / OT','Regular output / OT breakdown missing'));
+  if(!rows.length)errors.push(L('缺少型體明細','Thiếu chi tiết mã giày','Model breakdown missing'));
+  const missing=rows.filter(m=>m.pairs===null||m.pairs<0);
+  if(missing.length)errors.push(L('型體正常班雙數待補：','Thiếu số đôi ca chính: ','Missing model regular pairs: ')+missing.map(m=>m.model).join(', '));
+  if(!missing.length&&rows.length&&actual!==null&&Math.abs(rows.reduce((s,m)=>s+m.pairs,0)-actual)>.001)errors.push(L('型體合計與日報不符','Tổng mã không khớp báo cáo','Model totals do not reconcile'));
+  const missingIE=rows.filter(m=>m.pairs>0&&!(m.seconds>0));
+  if(missingIE.length)errors.push(L('缺少有效IE秒值：','Thiếu giây IE: ','Missing effective IE seconds: ')+missingIE.map(m=>m.model).join(', '));
+  const work=rows.reduce((s,m)=>s+(m.pairs>0&&m.seconds>0?m.pairs*m.seconds:0),0);
+  if(actual===0)errors.push(L('當日0雙，無型體比例可配比','Ngày 0 đôi, chưa có cơ cấu mã','Zero output: model mix unavailable'));
+  const valid=!errors.length&&work>0;
+  const avg=valid?work/actual:null,target8=valid?members*8*3600/avg:null,target=valid?members*hours*3600/avg:null;
+  const efficiency=valid?actual/target:null,delta=valid?actual-target:null;
+  return {p,date,members,hours,actual,rows,errors,valid,work,avg,target8,target,efficiency,delta,variance:valid?delta/target:null,
+   allocations:valid?rows.map(m=>({...m,share:m.pairs/actual,target:m.pairs/actual*target,target8:m.pairs/actual*target8,
+    singleModel8:m.seconds>0?members*8*3600/m.seconds:null})):[]};
  }
- function historical(p,before){
-  const days=[...state.daily].filter(d=>d.date<before).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,180);
-  const values=[];let excluded=0;
-  for(const day of days){
-   const w=workload(p,day);
-   if(!w.valid||w.provisional||!positive(w.hc))continue;
-   const eff=w.seconds/(w.hc*w.hours*3600);
-   if(eff>0&&eff<=1){values.push(eff);if(values.length===20)break;}else excluded++;
-  }
-  if(values.length<3)return {eff:null,samples:values.length,excluded};
-  values.sort((a,b)=>a-b);const m=Math.floor(values.length/2);
-  return {eff:values.length%2?values[m]:(values[m-1]+values[m])/2,samples:values.length,excluded};
+ const card=(label,value,foot)=>'<div class="kpi"><div class="label">'+esc(label)+'</div><div class="value">'+esc(value)+'</div><div class="foot">'+esc(foot||'')+'</div></div>';
+ function summary(s){
+  const name=s.p==='gc'?'Stockfit / GCĐ':'Assembly / TH';
+  if(!s.valid)return card(name+' · IE', '—',s.errors.join('；'));
+  return card(name+' · '+L('正常班人員','Nhân lực ca chính','Regular-shift Member'),number(s.members,0),number(s.hours,1)+'H')+
+   card(name+' · '+L('IE應產雙數','Sản lượng chuẩn IE','IE target pairs'),number(s.target,1),L('固定8H應產 ','Chuẩn 8H ','8H target ')+number(s.target8,1))+
+   card(name+' · '+L('實際完成','Thực tế','Actual output'),number(s.actual,0),L('差異 ','Chênh lệch ','Gap ')+(s.delta>0?'+':'')+number(s.delta,1)+' '+L('雙','đôi','pairs'))+
+   card(name+' · '+L('效率達成','Đạt hiệu suất','Efficiency attainment'),number(s.efficiency*100,1)+'%',L('差異率 ','Tỷ lệ chênh ','Variance ')+(s.variance>0?'+':'')+number(s.variance*100,1)+'%');
  }
- const sessions={};
- let currentDate='',current={};
- function derive(p,day){
-  const w=workload(p,day),history=historical(p,day.date);
-  if(!w.valid)return {...w,history,ideal:null,reasonable:null,capacity:null};
-  const ideal=Math.ceil(w.seconds/(w.hours*3600));
-  const reasonable=history.eff?Math.ceil(w.seconds/(w.hours*3600*history.eff)):null;
-  const capacity=w.hc!==null&&history.eff?Math.floor(w.hc*w.hours*3600*history.eff/w.avgSeconds):null;
-  return {...w,history,ideal,reasonable,capacity};
+ function table(s){
+  if(!s.valid)return '<p class="ie-plan-warning">'+esc(s.errors.join('；'))+'</p>';
+  const th=[L('型體','Mã giày','Model'),L('IE秒／雙','Giây IE/đôi','IE s/pair'),L('當日配比','Tỷ trọng ngày','Daily mix'),L('8H配比應產','Chuẩn phân bổ 8H','Allocated 8H target'),L('正常班應產','Chuẩn ca chính','Regular target'),L('正常班實際','Thực tế ca chính','Regular actual'),L('差異雙數','Chênh lệch đôi','Pair gap'),L('效率達成','Đạt hiệu suất','Attainment')];
+  return '<div class="table-scroll"><table class="data-table"><thead><tr>'+th.map(t=>'<th>'+t+'</th>').join('')+'</tr></thead><tbody>'+s.allocations.map(m=>'<tr><td>'+esc(m.model)+'</td><td>'+number(m.seconds,0)+'</td><td>'+number(m.share*100,1)+'%</td><td>'+number(m.target8,1)+'</td><td>'+number(m.target,1)+'</td><td>'+number(m.pairs,0)+'</td><td>'+number(m.pairs-m.target,1)+'</td><td>'+(m.target>0?number(m.pairs/m.target*100,1)+'%':'—')+'</td></tr>').join('')+'<tr class="highlight"><td>'+L('整線合計','Tổng chuyền','Line total')+'</td><td>—</td><td>100%</td><td>'+number(s.target8,1)+'</td><td>'+number(s.target,1)+'</td><td>'+number(s.actual,0)+'</td><td>'+number(s.delta,1)+'</td><td>'+number(s.efficiency*100,1)+'%</td></tr></tbody></table></div>';
  }
- const labelStatus=s=>!s.valid?L('資料待補','Thiếu dữ liệu','Incomplete data'):
-  s.provisional?L('暫估・待確認','Ước tính tạm','Provisional'):
-  s.history.eff?L('歷史效率推估','Theo hiệu suất lịch sử','History-based estimate'):
-  L('情境試算','Mô phỏng','Scenario only');
- function makeSummary(s,p){
-  const title=p==='gc'?'Stockfit / GCĐ':'Assembly / TH';
-  if(!s.valid)return '<small>'+title+' · '+labelStatus(s)+'</small><b>—</b><p>'+safe(s.reasons.join('；'))+'</p>';
-  const eff=s.history.eff;
-  const headline=eff?integer(s.reasonable)+' HC':integer(s.ideal)+' HC*';
-  const sub=eff?L('合理HC・歷史效率','HC ước tính · hiệu suất lịch sử','Estimated HC · historical efficiency')+' '+decimal(eff*100,1)+'% ('+integer(s.history.samples)+L('天',' ngày',' days')+')':
-   L('100%理論人力下限*；尚無可靠歷史效率','Mức HC tối thiểu ở 100%*; chưa đủ hiệu suất lịch sử','100% theoretical minimum*; no reliable historical efficiency');
-  const cap=s.capacity!==null?integer(s.capacity)+' '+L('雙','đôi','pairs'):
-   s.hc!==null?integer(Math.floor(s.hc*s.hours*3600*.8/s.avgSeconds))+'–'+integer(Math.floor(s.hc*s.hours*3600*.9/s.avgSeconds))+' '+L('雙（80–90%情境）','đôi (giả định 80–90%)','pairs (80–90% scenario)'):'—';
-  return '<small>'+title+' · '+labelStatus(s)+'</small><b>'+headline+'</b><p>'+sub+'</p>'+
-   '<p>'+L('實績','Thực tế','Actual')+' '+integer(s.dayPairs)+' '+L('雙','đôi','pairs')+
-   ' · '+L('100%理論HC','HC lý thuyết 100%','100% theoretical HC')+' '+integer(s.ideal)+
-   ' · '+L('實際HC','HC thực tế','Actual HC')+' '+(s.hc===null?'—':decimal(s.hc,0))+'</p>'+
-   '<p>'+L('以現有HC推估產量','Sản lượng ước tính theo HC hiện có','Estimated output with actual HC')+'：'+cap+'</p>'+
-   (s.provisional?'<p class="ie-plan-warning">'+safe(s.reasons.join('；'))+'</p>':'');
+ function note(){return L('IE應產＝人員×工時×3600÷加權IE秒值。三款共用人員只計一次；依當日正常班雙數比例配比，底加與成型分開計算。差異率＝（實際−應產）÷應產；效率達成＝實際÷應產。配比為當日組合基準，各款相同比例的達成率不代表獨立型體效率。',
+  'Chuẩn IE = nhân lực × giờ × 3600 ÷ giây IE bình quân. Nhân lực chung chỉ tính một lần; phân bổ theo tỷ trọng đôi ca chính. GCĐ và TH tính riêng. Chênh lệch = (thực tế − chuẩn) ÷ chuẩn; đạt = thực tế ÷ chuẩn. Tỷ lệ theo cơ cấu ngày không phải hiệu suất riêng từng mã.',
+  'IE target = Member × hours × 3600 / weighted IE seconds. Shared members are counted once; targets use regular-shift model pair shares. Processes are separate. Variance = (actual − target) / target; attainment = actual / target. Mix-based model attainment is not independently measured model efficiency.');}
+ function renderTargets(){
+  const compare=periods().compare,grid=document.getElementById('kpiGrid');
+  document.getElementById('ieCapacityPlanner')?.remove();
+  if(compare.length!==1){if(grid)grid.innerHTML=card(L('請選擇單一生產日','Chọn một ngày sản xuất','Select one production day'),'—','');return;}
+  const day=compare[0],gc=calculate('gc',day),asm=calculate('asm',day);
+  if(grid)grid.innerHTML=summary(gc)+summary(asm);
+  let panel=document.getElementById('ieOverviewTargets');
+  if(!panel){panel=document.createElement('article');panel.id='ieOverviewTargets';panel.className='panel ie-overview-targets';grid.insertAdjacentElement('afterend',panel);}
+  panel.innerHTML='<div class="panel-head"><h3>'+L('各型體 IE 8H應產與實績','Chuẩn IE 8H và thực tế theo mã','Model IE 8H targets and actuals')+' · '+esc(day.date)+'</h3></div><h4>Stockfit / GCĐ</h4>'+table(gc)+'<h4>Assembly / TH</h4>'+table(asm)+'<p class="ie-mix-note">'+note()+'</p>';
+  const mix=document.getElementById('ieMixSummary'),mixTable=document.getElementById('ieMixTable');
+  if(mix){mix.className='kpi-grid';mix.innerHTML=summary(gc)+summary(asm);}
+  if(mixTable)mixTable.innerHTML='<h4>Stockfit / GCĐ</h4>'+table(gc)+'<h4>Assembly / TH</h4>'+table(asm)+'<p class="ie-mix-note">'+note()+'</p>';
  }
- const metric=(title,value,small)=>'<div class="ie-plan-metric"><small>'+title+'</small><strong>'+value+'</strong>'+(small?'<span>'+small+'</span>':'')+'</div>';
- function makeCard(p,s){
-  const name=p==='gc'?'Stockfit / GCĐ':'Assembly / TH',eff=s.history.eff;
-  const vHC=s.hc===null?'':String(s.hc),vPairs=positive(s.dayPairs)?String(s.dayPairs):'';
-  const theoretical=s.valid?integer(s.ideal)+' HC':'—';
-  const historyHC=s.valid&&eff?integer(s.reasonable)+' HC':'—';
-  const target=s.valid&&eff?integer(s.capacity)+' '+L('雙','đôi','pairs'):'—';
-  const note=!s.valid?s.reasons.join('；'):
-   eff?L('採用過往','Dùng','Based on ')+integer(s.history.samples)+L('個完整歷史日的中位數效率',' ngày hợp lệ, hiệu suất trung vị',' complete historical days (median efficiency)')+' '+decimal(eff*100,1)+'%':
-   L('歷史樣本不足：只顯示100%理論值與80–90%假設情境，不當作正式目標。',
-     'Chưa đủ dữ liệu: chỉ hiển thị lý thuyết 100% và kịch bản 80–90%, không phải mục tiêu chính thức.',
-     'Insufficient history: only 100% theory and 80–90% illustrative scenarios, not approved targets.');
-  return '<section class="ie-plan-card" data-ie-process="'+p+'">'+
-   '<div class="ie-plan-card-head"><h4>'+name+'</h4><span>'+labelStatus(s)+'</span></div>'+
-   '<div class="ie-plan-metrics">'+
-    metric(L('IE 100%理論HC','HC lý thuyết 100%','100% theoretical HC'),theoretical,L('依當日實際雙數','Theo sản lượng thực tế','For actual output'))+
-    metric(L('IE推估合理HC','HC ước tính','Estimated reasonable HC'),historyHC,eff?decimal(eff*100,1)+'%':'—')+
-    metric(L('實際正常班HC','HC ca chính thực tế','Actual regular-shift HC'),s.hc===null?'—':decimal(s.hc,0)+' HC','')+
-    metric(L('現有人數參考產量','Sản lượng tham chiếu','Reference output with actual HC'),target,eff?L('同型體比例','Cùng cơ cấu mã','Same model mix'):'')+
-   '</div>'+
-   '<div class="ie-plan-inputs">'+
-    '<label><span>'+L('投入人數 HC（可修改試算）','Nhân lực HC (có thể chỉnh)','Available HC (editable)')+'</span><input type="number" min="1" max="20000" step="1" inputmode="numeric" data-ie-input="hc" data-ie-process="'+p+'" value="'+safe(vHC)+'" placeholder="HC"></label>'+
-    '<label><span>'+L('目標8H雙數（可修改試算）','Số đôi mục tiêu ca 8H','Target 8H pairs (editable)')+'</span><input type="number" min="1" max="1000000" step="1" inputmode="numeric" data-ie-input="pairs" data-ie-process="'+p+'" value="'+safe(vPairs)+'" placeholder="'+L('雙數','Đôi','Pairs')+'"></label>'+
-   '</div><div class="ie-plan-answer" id="ie-plan-result-'+p+'"></div>'+
-   '<p class="ie-plan-context">'+safe(note)+'</p>'+
-   (s.valid?'<p class="ie-plan-formula">'+L('本日人工IE工作量','Khối lượng công IE','IE labor workload')+' '+decimal(s.seconds/3600,1)+
-    ' '+L('人時','giờ công','labor-hours')+' · '+L('每雙加權人工秒值','Giây lao động bình quân/đôi','Weighted manual seconds/pair')+' '+decimal(s.avgSeconds,0)+'s'+
-    ' · '+decimal(s.hours,1)+'H</p>':'')+
-   (s.provisional?'<p class="ie-plan-warning">'+safe(s.reasons.join('；'))+'</p>':'')+
-   '</section>';
- }
- function updateAnswers(p){
-  const s=current[p],box=id('ie-plan-result-'+p);if(!box||!s)return;
-  if(!s.valid){box.textContent=L('請先補齊IE與正常班型體資料，避免使用錯誤的HC或產量推估。','Cần bổ sung IE và dữ liệu mã giày ca chính.','Complete IE and regular-shift model data before estimating HC/output.');return;}
-  const hc=n(sessions[p]?.hc),pairs=n(sessions[p]?.pairs),eff=s.history.eff;
-  const blocks=[];
-  if(positive(pairs)&&Number.isInteger(pairs)){
-   const work=pairs*s.avgSeconds;
-   const ideal=Math.ceil(work/(s.hours*3600));
-   let rhs='';
-   if(eff){rhs=L('歷史效率合理HC','HC theo hiệu suất lịch sử','History-based HC')+' <strong>'+integer(Math.ceil(work/(s.hours*3600*eff)))+' HC</strong>';}
-   else rhs=L('80–90%假設HC','HC giả định 80–90%','80–90% scenario HC')+' <strong>'+
-    integer(Math.ceil(work/(s.hours*3600*.9)))+'–'+integer(Math.ceil(work/(s.hours*3600*.8)))+' HC</strong>';
-   blocks.push('<div><span>'+L('生產','Sản xuất','To produce')+' <strong>'+integer(pairs)+' '+L('雙','đôi','pairs')+'</strong> → </span>'+rhs+
-    '<small>'+L('100%理論下限','Tối thiểu lý thuyết 100%','100% theoretical minimum')+' '+integer(ideal)+' HC</small></div>');
-  }
-  if(positive(hc)&&Number.isInteger(hc)){
-   const max=Math.floor(hc*s.hours*3600/s.avgSeconds);
-   let rhs='';
-   if(eff)rhs=L('歷史效率參考產量','Sản lượng theo hiệu suất lịch sử','History-based output')+' <strong>'+
-    integer(Math.floor(hc*s.hours*3600*eff/s.avgSeconds))+' '+L('雙','đôi','pairs')+'</strong>';
-   else rhs=L('80–90%情境產量','Sản lượng giả định 80–90%','80–90% scenario output')+' <strong>'+
-    integer(Math.floor(hc*s.hours*3600*.8/s.avgSeconds))+'–'+integer(Math.floor(hc*s.hours*3600*.9/s.avgSeconds))+' '+L('雙','đôi','pairs')+'</strong>';
-   blocks.push('<div><span>'+L('投入','Nhân lực','With')+' <strong>'+integer(hc)+' HC</strong> → </span>'+rhs+
-    '<small>'+L('100%理論產量上限','Sản lượng tối đa lý thuyết 100%','100% theoretical labor-only ceiling')+' '+integer(max)+' '+L('雙','đôi','pairs')+'</small></div>');
-  }
-  box.innerHTML=blocks.length?blocks.join(''):
-   L('輸入人數或目標雙數，系統會立即雙向計算。','Nhập HC hoặc số đôi mục tiêu để tính ngay.','Enter HC or target pairs for immediate two-way estimates.');
- }
- function renderPlanner(){
-  const compare=periods().compare,summary=id('ieMixSummary');
-  if(!summary)return;
-  let holder=id('ieCapacityPlanner');
-  if(!holder){holder=document.createElement('div');holder.id='ieCapacityPlanner';holder.className='ie-capacity-planner';summary.insertAdjacentElement('afterend',holder);
-   holder.addEventListener('input',event=>{
-    const el=event.target;if(!el.matches('input[data-ie-input]'))return;
-    const p=el.dataset.ieProcess;if(!sessions[p])return;
-    sessions[p][el.dataset.ieInput]=el.value;updateAnswers(p);
-   });
-  }
-  if(compare.length!==1){
-   holder.innerHTML='<p class="ie-plan-warning">'+L('目前僅支援單日8H型體組合的雙向試算。','Chỉ hỗ trợ mô phỏng một ngày.','Two-way estimates currently require a single comparison day.')+'</p>';return;
-  }
-  const day=compare[0];
-  if(currentDate!==day.date){currentDate=day.date;delete sessions.gc;delete sessions.asm;}
-  current={gc:derive('gc',day),asm:derive('asm',day)};
-  const cards=summary.querySelectorAll('.ie-summary-card');
-  if(cards.length>=2){cards[0].innerHTML=makeSummary(current.gc,'gc');cards[1].innerHTML=makeSummary(current.asm,'asm');}
-  holder.innerHTML='<div class="ie-plan-heading"><h4>'+L('IE合理人力 × 8H產量雙向試算','Mô phỏng HC × sản lượng 8H theo IE','IE HC × 8H output planner')+'</h4>'+
-   '<p>'+L('直接修改HC或目標雙數，即時計算；預設取當日日報。效率由歷史資料自動推估，沒有歷史效率就顯示情境區間。',
-    'Sửa HC hoặc số đôi mục tiêu để tính ngay; mặc định dùng dữ liệu ngày. Hiệu suất lấy từ lịch sử, thiếu thì hiển thị khoảng giả định.',
-    'Change HC or target pairs to recalculate instantly. Defaults to daily actuals; efficiency comes from validated history or labeled scenarios.')+'</p></div>'+
-   '<div class="ie-plan-grid">'+makeCard('gc',current.gc)+makeCard('asm',current.asm)+'</div>'+
-   '<p class="ie-plan-caution">'+L('注意：此為人工工作量與相同型體比例的線性推估，尚未包含線平衡、瓶頸、Pass 1/2、返修、等待與設備限制；不得直接作為裁員或正式產能承諾。',
-    'Lưu ý: ước tính tuyến tính theo giờ công và cơ cấu mã giày; chưa tính cân bằng chuyền, nút thắt, Pass 1/2, sửa hàng và dừng chờ. Không dùng làm định biên chính thức.',
-    'Labor-workload, same-mix linear estimates only. Line balance, bottlenecks, Pass 1/2, rework and downtime are not modeled; not an approved staffing or production commitment.')+'</p>';
+ const oldModels=window.renderIEModels;
+ window.renderIEModels=function(){if(typeof oldModels==='function')oldModels();renderTargets();};
+ window.FactoryIEPlanner=Object.freeze({calculate,renderTargets});
+ let plannerDate='';
+ const oldPlanner=window.renderPlanner;
+ window.renderPlanner=function(){
+  if(typeof oldPlanner==='function')oldPlanner();
+  const day=periods().compare[0];if(!day)return;
+  if(plannerDate!==day.date){plannerDate=day.date;for(const p of ['gc','asm']){document.getElementById(p+'HC').value=day[p+'HC']??'';document.getElementById(p+'Hours').value=8;}}
+  document.getElementById('plannerPeriod').textContent=L('採用當日型體組合：','Cơ cấu mã ngày: ','Daily model mix: ')+day.date;
+  for(const p of ['gc','asm'])document.getElementById(p+'Target').closest('label').hidden=true;
   for(const p of ['gc','asm']){
-   const s=current[p];
-   if(!sessions[p])sessions[p]={hc:s.hc===null?'':String(s.hc),pairs:positive(s.dayPairs)?String(s.dayPairs):''};
-   const hcInput=holder.querySelector('input[data-ie-process="'+p+'"][data-ie-input="hc"]');
-   const pairsInput=holder.querySelector('input[data-ie-process="'+p+'"][data-ie-input="pairs"]');
-   if(hcInput)hcInput.value=sessions[p].hc;
-   if(pairsInput)pairsInput.value=sessions[p].pairs;
-   updateAnswers(p);
+   const members=num(document.getElementById(p+'HC').value),hours=num(document.getElementById(p+'Hours').value);
+   const s=calculate(p,day,members,hours),el=document.getElementById(p+'Plan');
+   if(el)el.innerHTML='<div class="kpi-grid">'+summary(s)+'</div>'+table(s)+'<p class="ie-mix-note">'+note()+'</p>';
   }
- }
- window.renderIEModels=function(){if(typeof original==='function')original();renderPlanner();};
- window.FactoryIEPlanner=Object.freeze({workload,historical,derive,renderPlanner});
+ };
+ const oldRender=window.render;
+ window.render=function(){oldRender();const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;const word=state.lang==='zh'?'人員':state.lang==='vn'?'Nhân lực':'Member';while((node=walker.nextNode())){if(!node.parentElement?.closest('script,style,textarea')&&/(?<![a-zA-Z0-9_])HC(?![a-zA-Z0-9_])/.test(node.nodeValue))node.nodeValue=node.nodeValue.replace(/(?<![a-zA-Z0-9_])HC(?![a-zA-Z0-9_])/g,word);}};
+ const texts={overviewKpisSub:['依IE標準、實際人員與正常班工時，直接對照應產、實績、差異及效率。','Đối chiếu chuẩn IE với nhân lực, giờ ca chính và thực tế.','IE targets, actual members, regular hours, gaps and attainment.'],ieMixSub:['共用人員計一次，依當日型體組合分配IE應產；不套用歷史效率或假設折扣。','Nhân lực chung tính một lần; phân bổ theo cơ cấu mã trong ngày.','Shared members counted once; IE targets allocated by daily model mix.'],capacityTitle:['IE人員與產能計算','Tính nhân lực và công suất IE','IE Member and capacity'],capacitySub:['依已登錄IE標準及所選日期型體組合計算。','Theo định mức IE và cơ cấu ngày đã chọn.','Based on saved IE and selected daily model mix.']};
+ for(const [k,v] of Object.entries(texts)){translations.zh[k]=v[0];translations.vn[k]=v[1];translations.en[k]=v[2];}
 })();

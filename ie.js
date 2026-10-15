@@ -2,7 +2,7 @@
 /* V1.4: Model IE standards and capacity planning. IndexedDB persistence is provided by records.js. */
 (() => {
 const zh={
- tabIE:'IE 標準設定',ieFormTitle:'IE 型體標準工時登錄',ieFormSub:'只需輸入每雙鞋所有人工工站標準秒數加總；不含機器與等待。HC與產能依實績自動反算，缺值不推估。',
+ tabIE:'IE 標準設定',ieFormTitle:'IE 型體標準工時登錄',ieFormSub:'只需輸入每雙鞋所有人工工站標準秒數加總；不含機器與等待。依實際人員與IE標準計算應產，缺值不推估。',
  ieDisplayName:'型體名稱（選填）',ieEffectiveDate:'IE生效日（留空＝適用所有歷史日期）',ieShiftHours:'模擬工時（小時）',ieSAM:'SAM 標準人分鐘／雙',ieCycle:'人工總秒值（秒／雙）',ieTarget:'試算雙數（選填）',ieDedicatedHC:'IE 專用HC（模擬）',ieEfficiency:'目標效率 %',ieNotes:'IE備註／版本來源',ieSave:'儲存IE標準／新增型體',
  ieRegistryTitle:'型體與IE標準資料庫',ieRegistrySub:'可新增型體及IE生效版本；刪除IE標準不會刪除產量或品質紀錄。',ieMixTitle:'IE標準工時 × 實際型體組合',ieMixSub:'按各型體人工總秒值與正常班實際雙數計算工作負荷；歷史效率足夠才推估合理HC，缺值不補零。',ieEdit:'新增／編輯IE標準'
 };
@@ -55,24 +55,8 @@ function historicalEff(p,beforeDate){
  return {eff:values.length%2?values[middle]:(values[middle-1]+values[middle])/2,samples:samples.length,excluded};
 }
 function iePreview(p){
- const prefix=p==='gc'?'Gc':'Asm',el=$('ie'+prefix+'Preview');
- const s=nfield('ie'+prefix+'Cycle'),hours=nfield('ieShiftHours');
- if(!positive(s)||!positive(hours)){el.textContent=label('請填入人工總秒值，系統會自動反算所需人力。','Nhập tổng giây lao động để tự tính nhân lực.','Enter total manual seconds to calculate HC automatically.');return;}
- const model=code(field('ieModel')),entered=nfield('ie'+prefix+'TargetPairs');
- const recent=[...state.models].filter(m=>code(m.model)===model&&positive(numeric(m[p+'Normal']))).sort((a,b)=>b.date.localeCompare(a.date))[0];
- const reference=positive(entered)?entered:recent?numeric(recent[p+'Normal']):100;
- const source=positive(entered)?label('輸入的試算雙數','Số đôi nhập để mô phỏng','Entered scenario pairs'):
-  recent?label('最近同款8H正常班實績','Sản lượng ca chính gần nhất cùng mã','Latest regular-shift output for this model'):
-  label('每100雙示例（非生產目標）','Ví dụ 100 đôi (không phải mục tiêu)','100-pair illustration (not a target)');
- const ideal=Math.ceil(reference*s/(hours*3600));
- const hist=historicalEff(p,'9999-12-31');
- const use=hist.eff??0.85,est=Math.ceil(reference*s/(hours*3600*use));
- const type=hist.eff?label('歷史參考效率','Hiệu suất tham chiếu lịch sử','Historical reference efficiency'):
-  label('85%情境假設（非正式標準）','Giả định 85% (không phải định mức)','85% scenario only (not an approved standard)');
- el.textContent=source+' '+int(reference)+label('雙：',' đôi: ',' pairs: ')+
-  label('100%理論','Lý thuyết 100%','100% theoretical')+' '+int(ideal)+' HC；'+
-  type+' '+fmt(use*100,1)+'% → '+int(est)+' HC。'+
-  label('這是人工工時推算，不是產線節拍或已驗證的實際產能。','Đây là ước tính lao động, không phải nhịp chuyền hay công suất đã xác minh.','This is a labor-workload estimate, not line takt or validated output capacity.');
+ const prefix=p==='gc'?'Gc':'Asm',el=$('ie'+prefix+'Preview'),seconds=nfield('ie'+prefix+'Cycle');
+ el.textContent=positive(seconds)?label('IE人工總秒值：','Tổng giây IE: ','IE manual seconds: ')+fmt(seconds,0)+label(' 秒／雙；8H每人標準產出 ',' giây/đôi; chuẩn 8H/người ',' s/pair; 8H pairs per Member ')+fmt(8*3600/seconds,2):label('此製程尚無IE秒值，保持空白，不補零。','Chưa có giây IE, để trống.','No IE seconds for this process; leave blank.');
 }
 function preview(){iePreview('gc');iePreview('asm');}
 
@@ -94,7 +78,7 @@ function readForm(){
  return record;
 }
 
-async function saveIE(e){e.preventDefault();let record;try{record=readForm();}catch(err){showMessage(err.message,true);return;}
+async function saveIE(e){e.preventDefault();if(!window.FactoryCloudDashboard?.enabled){showMessage(label('請先從私人雲端管理網址進入；尚未儲存，避免只存本機。','Vui lòng mở liên kết quản trị đám mây; chưa lưu.','Open your private cloud admin link first; nothing has been saved.'),true);return;}let record;try{record=readForm();}catch(err){showMessage(err.message,true);return;}
  const newKey=ieKey(record),existing=allIE().find(x=>ieKey(x)===newKey);
  if(existing&&editingKey!==newKey&&!confirm(label('相同型體及生效日已存在IE標準，確定覆蓋？','Đã có định mức IE cùng mã và ngày hiệu lực. Ghi đè?')))return;
  if(window.FactoryCloudDashboard?.enabled){

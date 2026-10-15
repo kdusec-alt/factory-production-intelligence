@@ -123,3 +123,5 @@ body.cloud-manager:not(.cloud-viewer) #view-entry .section-head .tag{display:non
 .ie-summary-card .ie-plan-warning{margin-top:6px;color:#a05b2c}
 @media(max-width:1000px){.ie-plan-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.ie-plan-metrics,.ie-plan-inputs{grid-template-columns:1fr 1fr}.ie-plan-metric strong{font-size:18px}.ie-capacity-planner{padding:10px}}
+/* IE standard target dashboard */
+.ie-overview-targets{margin:0 0 20px;padding:20px}.ie-overview-targets h4{margin:18px 0 10px}.ie-overview-targets .data-table{min-width:800px}.ie-overview-targets .ie-mix-note{line-height:1.7}.kpi .value{overflow-wrap:anywhere}
