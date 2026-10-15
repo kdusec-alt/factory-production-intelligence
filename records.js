@@ -65,6 +65,7 @@ window.persistFactoryState=async(action='External import',before=null)=>{
  try{await persist(action,before);render();}catch(e){showMessage(tr('本機儲存失敗：','Lưu trên thiết bị thất bại: ')+e.message,true);throw e;}
 };
 async function commit(action,mutate){
+ if(window.FactoryCloudDashboard?.enabled){showMessage('主管雲端模式為唯讀；請使用幹部專用填報頁儲存正式資料。',true);return;}
  if(busy)return;busy=true;const before=allState();
  try{mutate();state.files=['Browser Database · '+tr('每日登錄','Nhập hằng ngày')];state.hosted=false;state.demo=false;await persist(action,before);render();showMessage(tr('已成功儲存並更新分析：','Đã lưu và cập nhật phân tích: ')+action);}
  catch(e){applyState(before);render();showMessage(tr('儲存失敗，已復原原資料：','Lưu thất bại, đã khôi phục dữ liệu trước: ')+String(e.message||e),true);}
@@ -173,6 +174,7 @@ function bindWorkspace(){
 }
 window.initializeRecordSystem=async()=>{
  bindWorkspace();clearDaily();clearModel();clearQuality();window.initializeIESystem?.();
+ if(window.FactoryCloudDashboard?.enabled){$('dbStatus').textContent='Supabase cloud manager mode · browser data unchanged';window.FactoryCloudDashboard.activate();return;}
  try{
   db=await openDB();const stored=await getStoredSnapshot();
   if(stored?.snapshot){applyState(stored.snapshot);setDefaultPeriods();}

@@ -69,3 +69,14 @@ The private staff/manager URLs are unchanged; reload the page to get V1.8. Brows
 - Mocked manager cloud flow: Day B Stockfit 400 pairs, 50 HC, 8H, no OT, historical rate 0.8 => historical 8H reference 320 pairs, actual 8H 400 pairs, 125% achievement, positive no-OT verdict. Assembly with OT was correctly classified separately.
 - Mocked staff benchmark: 400 pairs in 8H and 300 pairs in 6H both normalize to 400 pairs/8H; unconfirmed OT yields no 8H achievement verdict.
 - Existing Supabase Edge Function benchmark endpoint and NBY-only schema are reused; no schema migration or new staff login required.
+
+## V1.13 (2026-10-15): Unified cloud dashboard and verified historical migration
+
+- Historical GitHub production snapshot (exported 2026-10-14 09:29:50 UTC) was checked by date/process: all 72 process reports reconcile with model totals and OT totals.
+- The 72 verified records were imported into `production_entries` (36 GCĐ and 36 TH); 72 audit records were written. Original 36 daily rows, 108 model rows and 28 historical quality issues are preserved in private RLS-protected `factory_import_archives`.
+- `factory-api` manager-only `dashboard` action serves cloud production entries plus archived quality reference. Staff access links cannot list this data.
+- Main `index.html#admin=<private-manager-key>` loads directly from Supabase; browser IndexedDB is not read, overwritten or used as cloud truth in this mode. A 5-minute refresh and manual refresh are available.
+- Main dashboard is **read-only in cloud mode**. Production entry is via the existing private `staff.html#key=...` link, and `manager.html` links to the full cloud dashboard while preserving the manager key.
+- Opening `index.html` without the private manager key retains the legacy single-browser mode with an explicit warning. Local unsynced changes on other devices are **not** included in the migration.
+- Historical quality issues are archived reference only; no cloud quality-edit workflow has been implemented yet.
+- Important: the two processes represent sequential work and must not be combined as final finished pairs.

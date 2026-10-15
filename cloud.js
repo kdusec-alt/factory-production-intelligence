@@ -76,6 +76,7 @@ Object.assign(translations.en,window.FACTORY_EN?.cloud||{});
   }
   function schedule(){if(!connected||!ready||!$('cloudAuto').checked||suppress)return;clearTimeout(delay);delay=setTimeout(()=>{void push(true);},2000);}
   function initialize(){
+    if(window.FactoryCloudDashboard?.enabled)return;
     $('cloudConnect').addEventListener('click',()=>{void connect();});
     $('cloudDisconnect').addEventListener('click',disconnect);
     $('cloudPush').addEventListener('click',()=>{void push(false);});
