@@ -35,3 +35,11 @@
 .insight-evidence-foot{font-size:10px;line-height:1.65;color:#8491a7;border-top:1px solid #e9eef6;margin-top:8px;padding-top:8px}
 .insight-evidence p{margin:0;font-size:10.5px}
 @media(max-width:680px){.insight{padding:11px}.insight-evidence{padding:9px}}
+
+/* Model history benchmark audit view */
+.model-benchmark-panel{margin:18px 0}
+.model-benchmark-table{min-width:730px}
+.model-benchmark-table .change{display:inline-block;min-width:56px;text-align:center}
+.model-benchmark-note{margin:12px 0 0;font-size:10.5px;line-height:1.7;color:#74829a}
+.model-benchmark-note strong{display:block;margin-top:5px;color:#a76d23}
+.model-benchmark-empty{color:#7d8aa0;font-size:11px}
