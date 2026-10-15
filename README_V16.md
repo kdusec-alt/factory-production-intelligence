@@ -36,3 +36,36 @@ The earlier verified workbook contains 36 Stockfit and 36 Assembly process days 
 On 2026-10-15 the NBY-only database migration and Edge Function were deployed. API acceptance tests returned HTTP 200 for a NBY process benchmark (15 historical samples), HTTP 200 for a real NBY-only process save, HTTP 409 for a duplicate save, and HTTP 422 for an outdated A01/legacy-form submission. SQL transaction tests covered revisions, separate GCĐ/TH records, and audit history. Temporary records and test credentials were removed, leaving 0 production records, 72 historical rows, and 2 active private access links.
 
 The private staff/manager URLs are unchanged; reload the page to get V1.8. Browser and device-specific verification should be performed before mass rollout.
+
+## V1.9 (2026-10-15): English + evidence-based 8H management intelligence
+
+### Language support
+- `staff.html`: Vietnamese (default), Traditional Chinese, English via a visible language dropdown. The selected language is remembered on the device; `?lang=en` or `?lang=zh` overrides it.
+- `manager.html`: Traditional Chinese (default), English, Vietnamese. All KPI/table/insight labels and dynamic guidance are translated.
+- Neither language preference nor translation changes the private staff/admin link key or cloud data model.
+
+### 8-hour reference and actual normalization
+- `normal_pairs = total_pairs - confirmed_OT_pairs`
+- `actual_8H_equivalent = normal_pairs / regular_shift_hours × 8`
+- `historical_rate = sum(historical_normal_pairs) / sum(historical_HC × historical_regular_hours)`
+- `historical_8H_reference = historical_rate × today's_regular_HC × 8`
+- `achievement = actual_8H_equivalent / historical_8H_reference` (equivalent to today's normal pairs/person-hour divided by historical rate).
+- A real 6H shift normalized to 8H is **not** presented as 8H physically completed output. Actual completed pairs remain visible separately.
+- OT output is never added to regular-shift productivity. Unknown OT suppresses the achievement verdict.
+
+### Automated management interpretation
+- No OT + ratio ≥ 100%: explicitly recognize regular-shift achievement without overtime.
+- No OT + ratio < 100%: show below-reference status and prompt a review of model mix, HC, downtime and rework; do not infer root cause.
+- OT reported: evaluate regular-shift output independently, and clearly disclose OT.
+- Difference between Day A and Day B: compare person-hour rates, while warning when model-code sets differ.
+- No valid historical reference (<5 days), unknown OT, or a failed history request: **no invented target or verdict**.
+- Matching historical process/model-set reference is preferred. Same-process and whole-process historical fallback are marked as non-model-specific reference, not official IE/SAM KPIs.
+- Dashboard KPIs and comparison now correctly label and calculate **8H equivalent**, not raw normal pairs as "8H pairs".
+- Manager CSV adds `normal_output`, `output_8h_equivalent`, and `manhour_rate` while preserving source fields.
+
+### Verification
+- All three JavaScript files passed V8 syntax parsing.
+- English/Vietnamese/Chinese staff translations contain the same 54 field/message keys.
+- Mocked manager cloud flow: Day B Stockfit 400 pairs, 50 HC, 8H, no OT, historical rate 0.8 => historical 8H reference 320 pairs, actual 8H 400 pairs, 125% achievement, positive no-OT verdict. Assembly with OT was correctly classified separately.
+- Mocked staff benchmark: 400 pairs in 8H and 300 pairs in 6H both normalize to 400 pairs/8H; unconfirmed OT yields no 8H achievement verdict.
+- Existing Supabase Edge Function benchmark endpoint and NBY-only schema are reused; no schema migration or new staff login required.
