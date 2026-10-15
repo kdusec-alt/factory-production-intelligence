@@ -93,7 +93,7 @@
    if(!response.ok||json.ok!==true)throw Error(json.error||'HTTP '+response.status);
    const normalized=transform(json.rows,json.excel_days||[]);
    if(typeof window.applyFactoryCloudData!=='function')throw Error('Analysis engine not ready');
-   window.applyFactoryCloudData({...normalized,quality:Array.isArray(json.excel_quality?.quality)?json.excel_quality.quality:Array.isArray(json.legacy_quality)?json.legacy_quality:[],ieStandards:Array.isArray(json.legacy_ie_standards)?json.legacy_ie_standards:[],latestImport:json.excel_latest||null});
+   window.applyFactoryCloudData({...normalized,quality:Array.isArray(json.excel_quality?.quality)?json.excel_quality.quality:Array.isArray(json.legacy_quality)?json.legacy_quality:[],ieStandards:Array.isArray(json.ie_standards)?json.ie_standards:Array.isArray(json.legacy_ie_standards)?json.legacy_ie_standards:[],latestImport:json.excel_latest||null});
    lastSuccess=Date.now();
    const time=new Date().toLocaleString(document.documentElement.lang==='en'?'en-US':document.documentElement.lang==='vi'?'vi-VN':'zh-TW');
    feedback('已同步 '+time+' · '+normalized.manualCount+' 筆填報 / '+normalized.excelCount+' 筆 Excel'+(json.truncated?' · 超過2000筆，請聯絡管理員':''));
@@ -132,6 +132,33 @@
    announce(note+' 所有主管重新開啟頁面即可看到，已開啟頁面最多五分鐘自動更新。');
   }catch(error){feedback('Excel 匯入失敗：'+String(error.message||error),'error');throw error;}
   finally{if(input)input.disabled=false;}
+ }
+
+ async function saveIE(standard){
+  if(!isAdmin)throw new Error('只有管理員可更新IE標準');
+  const result=await post({action:'save_ie',standard},15000);
+  if(!await refresh())throw new Error('IE標準已儲存雲端，但畫面同步失敗，請手動更新雲端');
+  return result;
+ }
+ async function deleteIE(record){
+  if(!isAdmin)throw new Error('只有管理員可刪除IE標準');
+  await post({action:'delete_ie',model:record.model,effectiveDate:record.effectiveDate||''},15000);
+  if(!await refresh())throw new Error('IE已從雲端刪除，但畫面同步失敗，請手動更新');
+ }
+ async function migrateLocalIE(){
+  if(!isAdmin)return;
+  try{
+   if(typeof window.readLocalIEStandards!=='function')throw new Error('本機資料庫讀取尚未準備好');
+   const local=await window.readLocalIEStandards();
+   const usable=local.filter(r=>r&&(Number(r.gcCycle)>0||Number(r.asmCycle)>0));
+   if(!usable.length){window.alert('此瀏覽器找不到已儲存的IE人工秒值。請確認之前曾按「儲存IE標準」，或直接在雲端IE管理頁重新輸入。');return;}
+   if(usable.length>100)throw new Error('本機IE超過100筆，請分批整理');
+   const confirmed=window.confirm('偵測到此瀏覽器 '+usable.length+' 筆已儲存的IE標準。請先確認「IE節拍」欄位實際填入的是各人工工站秒值加總（非產線出雙節拍），並確認允許覆蓋雲端相同型體及生效日的IE標準。確定要同步嗎？');
+   if(!confirmed)return;
+   const result=await post({action:'upsert_ie_batch',standards:usable},30000);
+   if(!await refresh())throw new Error('已成功寫入雲端，但重新讀取失敗，請按更新雲端');
+   window.alert('已將 '+result.count+' 筆本機IE人工秒值同步至雲端。其他主管更新頁面即可看到。');
+  }catch(e){window.alert('同步本機IE失敗：'+String(e.message||e));}
  }
  async function createViewer(){
   if(!isAdmin)return;
@@ -178,12 +205,18 @@
    const link=document.createElement('a');link.className='outline';link.textContent='雲端製程明細';link.href='./manager.html#'+(isAdmin?'admin':'viewer')+'='+encodeURIComponent(accessKey);
    link.style.cssText='text-decoration:none;display:inline-flex;align-items:center';actions.append(link);
    if(isAdmin){const add=document.createElement('button');add.type='button';add.className='outline';add.textContent='建立主管唯讀網址';add.addEventListener('click',()=>{void createViewer();});actions.append(add);
-    const manage=document.createElement('button');manage.type='button';manage.className='outline';manage.textContent='管理主管權限';manage.addEventListener('click',()=>{void manageViewers();});actions.append(manage);}
+    const manage=document.createElement('button');manage.type='button';manage.className='outline';manage.textContent='管理主管權限';manage.addEventListener('click',()=>{void manageViewers();});actions.append(manage);
+    const ieManage=document.createElement('button');ieManage.type='button';ieManage.className='outline';ieManage.textContent='IE人工秒值／HC管理';
+    ieManage.addEventListener('click',()=>{window.switchEntryTab?.('ie');setView('entry');document.getElementById('ieForm')?.scrollIntoView({block:'start',behavior:'smooth'});});actions.append(ieManage);
+    const migrate=document.createElement('button');migrate.type='button';migrate.className='outline';migrate.textContent='同步本機IE至雲端';
+    migrate.addEventListener('click',()=>{void migrateLocalIE();});actions.append(migrate);
+   }
   }
+  if(isAdmin){document.querySelector('.nav-link[data-view="entry"]')?.addEventListener('click',()=>{window.switchEntryTab?.('ie');});}
   feedback('準備連線…');
   setInterval(()=>{if(document.visibilityState==='visible')void refresh();},300000);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&lastSuccess&&Date.now()-lastSuccess>300000)void refresh();});
   void refresh();
  }
- window.FactoryCloudDashboard=Object.freeze({enabled,isAdmin,activate,refresh,importFiles});
+ window.FactoryCloudDashboard=Object.freeze({enabled,isAdmin,activate,refresh,importFiles,saveIE,deleteIE,migrateLocalIE});
 })();
