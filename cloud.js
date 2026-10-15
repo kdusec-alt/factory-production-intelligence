@@ -11,7 +11,8 @@
   const zh={cloudTitle:'GitHub 雲端資料同步',cloudSub:'單人使用 · 獨立資料分支 · JSON版本歷史',cloudTokenLabel:'GitHub Fine-grained Token（僅保存在本頁記憶體）',cloudConnect:'連線 GitHub',cloudDisconnect:'斷線',cloudPush:'上傳目前資料',cloudPull:'下載雲端資料並還原',cloudAuto:'首次同步後，每次修改自動上傳',cloudCautionTitle:'GitHub 儲存說明',cloudCaution:'目前Repository為公開專案，雲端JSON也會公開。Token不寫入程式或本機資料庫，重新整理需再次連線。不同裝置修改時，系統會阻止舊版本覆蓋新版本。'};
   const vn={cloudTitle:'Đồng bộ dữ liệu lên GitHub',cloudSub:'Dùng cá nhân · Nhánh dữ liệu riêng · Lịch sử phiên bản JSON',cloudTokenLabel:'GitHub Fine-grained Token (chỉ giữ trong bộ nhớ trang)',cloudConnect:'Kết nối GitHub',cloudDisconnect:'Ngắt kết nối',cloudPush:'Đẩy dữ liệu hiện tại lên GitHub',cloudPull:'Tải dữ liệu từ GitHub và khôi phục',cloudAuto:'Tự động đẩy sau lần đồng bộ đầu tiên',cloudCautionTitle:'Lưu ý lưu trữ GitHub',cloudCaution:'Repository hiện công khai; tệp JSON trên GitHub cũng công khai. Token không lưu trong mã nguồn hoặc cơ sở dữ liệu cục bộ. Khi tải lại trang cần kết nối lại. Hệ thống từ chối ghi đè nếu dữ liệu từ thiết bị khác đã thay đổi.'};
   Object.assign(translations.zh,zh);Object.assign(translations.vn,vn);
-  const trc=(a,b)=>state.lang==='vn'?b:a;
+Object.assign(translations.en,window.FACTORY_EN?.cloud||{});
+  const trc=(a,b)=>state.lang==='zh'?a:state.lang==='vn'?b:(window.FACTORY_EN?.translate?.(a)??a);
   let token='',connected=false,ready=false,remoteSha=null,lastSynced='',syncing=false,queued=false,delay=null,suppress=false;
   function status(message,error=false){$('cloudMessage').textContent=message;$('cloudMessage').classList.toggle('error',error);}
   function badge(message,kind='idle'){$('cloudBadge').textContent=message;$('cloudTopStatus').textContent=trc('GitHub：','GitHub: ')+message;$('cloudTopStatus').dataset.status=kind;}
@@ -52,7 +53,7 @@
       const currentPayload=payload();const result=await api(FILE,'PUT',{message:'data: sync factory production records '+new Date().toISOString(),content:currentPayload.base64,branch:BRANCH,...(currentSha?{sha:currentSha}:{})});
       if(!result?.content?.sha)throw new Error('GitHub did not return a content SHA');
       remoteSha=result.content.sha;ready=true;lastSynced=new Date().toISOString();markConnected();
-      status(trc('已成功同步至GitHub：','Đã đồng bộ lên GitHub: ')+new Date(lastSynced).toLocaleString(state.lang==='vn'?'vi-VN':'zh-TW')+' · '+trc('分支','Nhánh')+' '+BRANCH);
+      status(trc('已成功同步至GitHub：','Đã đồng bộ lên GitHub: ')+new Date(lastSynced).toLocaleString(state.lang==='vn'?'vi-VN':state.lang==='en'?'en-US':'zh-TW')+' · '+trc('分支','Nhánh')+' '+BRANCH);
     }catch(e){badge(trc('同步失敗','Lỗi đồng bộ'),'error');status(trc('GitHub同步失敗（本機已保留）：','Không đồng bộ được (dữ liệu cục bộ vẫn còn): ')+e.message,true);}
     finally{syncing=false;if(queued){queued=false;if(ready&&$('cloudAuto').checked)schedule();}}
   }
@@ -69,7 +70,7 @@
       window.exportFactoryBackup?.();
       await window.restoreFactoryCloudSnapshot(obj.snapshot);
       remoteSha=current.sha;ready=true;lastSynced=new Date().toISOString();markConnected();
-      status(trc('已還原GitHub資料並保存在本機：','Đã khôi phục dữ liệu GitHub vào thiết bị: ')+new Date(lastSynced).toLocaleString(state.lang==='vn'?'vi-VN':'zh-TW'));
+      status(trc('已還原GitHub資料並保存在本機：','Đã khôi phục dữ liệu GitHub vào thiết bị: ')+new Date(lastSynced).toLocaleString(state.lang==='vn'?'vi-VN':state.lang==='en'?'en-US':'zh-TW'));
     }catch(e){badge(trc('還原失敗','Khôi phục lỗi'),'error');status(trc('無法還原GitHub資料：','Không thể khôi phục dữ liệu GitHub: ')+e.message,true);}
     finally{syncing=false;suppress=false;}
   }
