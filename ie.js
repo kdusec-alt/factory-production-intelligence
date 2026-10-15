@@ -2,9 +2,9 @@
 /* V1.4: Model IE standards and capacity planning. IndexedDB persistence is provided by records.js. */
 (() => {
 const zh={
- tabIE:'IE 標準設定',ieFormTitle:'IE 型體標準工時登錄',ieFormSub:'只需輸入每雙鞋所有人工工站標準秒數加總；不含機器與等待。HC與產能依實績自動反算，缺值不推估。',
- ieDisplayName:'型體名稱（選填）',ieEffectiveDate:'IE生效日（留空＝適用所有歷史日期）',ieShiftHours:'模擬工時（小時）',ieSAM:'SAM 標準人分鐘／雙',ieCycle:'人工總秒值（秒／雙）',ieTarget:'試算雙數（選填）',ieDedicatedHC:'IE 專用HC（模擬）',ieEfficiency:'目標效率 %',ieNotes:'IE備註／版本來源',ieSave:'儲存IE標準／新增型體',
- ieRegistryTitle:'型體與IE標準資料庫',ieRegistrySub:'可新增型體及IE生效版本；刪除IE標準不會刪除產量或品質紀錄。',ieMixTitle:'IE標準工時 × 實際型體組合',ieMixSub:'按各型體人工總秒值與正常班實際雙數計算工作負荷；歷史效率足夠才推估合理HC，缺值不補零。',ieEdit:'新增／編輯IE標準'
+ tabIE:'IE 標準設定',ieFormTitle:'IE 型體標準工時登錄',ieFormSub:'只需輸入每雙鞋所有人工工站標準秒數加總；不含機器與等待。人員與產能依實績自動反算，缺值不推估。',
+ ieDisplayName:'型體名稱（選填）',ieEffectiveDate:'IE生效日（留空＝適用所有歷史日期）',ieShiftHours:'模擬工時（小時）',ieSAM:'SAM 標準人分鐘／雙',ieCycle:'人工總秒值（秒／雙）',ieTarget:'試算雙數（選填）',ieDedicatedHC:'IE 專用人員（模擬）',ieEfficiency:'目標效率 %',ieNotes:'IE備註／版本來源',ieSave:'儲存IE標準／新增型體',
+ ieRegistryTitle:'型體與IE標準資料庫',ieRegistrySub:'可新增型體及IE生效版本；刪除IE標準不會刪除產量或品質紀錄。',ieMixTitle:'IE標準工時 × 實際型體組合',ieMixSub:'按各型體人工總秒值與正常班實際雙數計算工作負荷；歷史效率足夠才推估合理人員，缺值不補零。',ieEdit:'新增／編輯IE標準'
 };
 const vn={
  tabIE:'Tiêu chuẩn IE',ieFormTitle:'Nhập định mức IE theo mã giày',ieFormSub:'Chỉ nhập tổng giây thao tác thủ công của tất cả công đoạn cho mỗi đôi, không gồm máy hoặc chờ. Tự tính nhân lực theo dữ liệu thực tế.',
@@ -34,7 +34,7 @@ function historicalEff(p,beforeDate){
  const days=[...state.daily].filter(d=>d.date<beforeDate).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,180);
  const samples=[];let excluded=0;
  for(const d of days){
-  const hc=numeric(d[p+'HC']),hours=numeric(d[p+'Hours']),total=numeric(d[p+'Normal']);
+  const hc=numeric(d[p+'人員']),hours=numeric(d[p+'Hours']),total=numeric(d[p+'Normal']);
   if(!positive(hc)||!positive(hours)||total===null||total<=0)continue;
   const ms=state.models.filter(m=>m.date===d.date),known=ms.map(m=>numeric(m[p+'Normal']));
   if(!ms.length||known.some(n=>n===null||n<0)||Math.abs(known.reduce((a,b)=>a+b,0)-total)>1)continue;
@@ -57,7 +57,7 @@ function historicalEff(p,beforeDate){
 function iePreview(p){
  const prefix=p==='gc'?'Gc':'Asm',el=$('ie'+prefix+'Preview');
  const s=nfield('ie'+prefix+'Cycle'),hours=nfield('ieShiftHours');
- if(!positive(s)||!positive(hours)){el.textContent=label('請填入人工總秒值，系統會自動反算所需人力。','Nhập tổng giây lao động để tự tính nhân lực.','Enter total manual seconds to calculate HC automatically.');return;}
+ if(!positive(s)||!positive(hours)){el.textContent=label('請填入人工總秒值，系統會自動反算所需人力。','Nhập tổng giây lao động để tự tính nhân lực.','Enter total manual seconds to calculate 人員 automatically.');return;}
  const model=code(field('ieModel')),entered=nfield('ie'+prefix+'TargetPairs');
  const recent=[...state.models].filter(m=>code(m.model)===model&&positive(numeric(m[p+'Normal']))).sort((a,b)=>b.date.localeCompare(a.date))[0];
  const reference=positive(entered)?entered:recent?numeric(recent[p+'Normal']):100;
@@ -70,8 +70,8 @@ function iePreview(p){
  const type=hist.eff?label('歷史參考效率','Hiệu suất tham chiếu lịch sử','Historical reference efficiency'):
   label('85%情境假設（非正式標準）','Giả định 85% (không phải định mức)','85% scenario only (not an approved standard)');
  el.textContent=source+' '+int(reference)+label('雙：',' đôi: ',' pairs: ')+
-  label('100%理論','Lý thuyết 100%','100% theoretical')+' '+int(ideal)+' HC；'+
-  type+' '+fmt(use*100,1)+'% → '+int(est)+' HC。'+
+  label('100%理論','Lý thuyết 100%','100% theoretical')+' '+int(ideal)+' 人員；'+
+  type+' '+fmt(use*100,1)+'% → '+int(est)+' 人員。'+
   label('這是人工工時推算，不是產線節拍或已驗證的實際產能。','Đây là ước tính lao động, không phải nhịp chuyền hay công suất đã xác minh.','This is a labor-workload estimate, not line takt or validated output capacity.');
 }
 function preview(){iePreview('gc');iePreview('asm');}
@@ -174,7 +174,7 @@ function renderMix(){
  for(const [p,title] of [['gc','Stockfit / GCĐ'],['asm','Assembly / TH']]){
   let work=0,normalPairs=0,laborSeconds=0,availableShiftHours=0,complete=compare.length>0,missing=[],reconcile=true;
   for(const d of compare){
-   const dayPairs=numeric(d[p+'Normal']),hc=numeric(d[p+'HC']),hours=numeric(d[p+'Hours']);
+   const dayPairs=numeric(d[p+'Normal']),hc=numeric(d[p+'人員']),hours=numeric(d[p+'Hours']);
    const ms=records.filter(m=>m.date===d.date),nums=ms.map(m=>numeric(m[p+'Normal']));
    if(dayPairs===null||!positive(hc)||!positive(hours)||!ms.length||nums.some(n=>n===null||n<0)||Math.abs(nums.reduce((a,b)=>a+(b||0),0)-dayPairs)>1){
     complete=false;reconcile=false;continue;
@@ -197,18 +197,18 @@ function renderMix(){
   const status=!complete?label('IE或日報資料不足','Thiếu IE hoặc báo cáo','Missing IE or daily data'):
    hist.eff?label('歷史效率推估','Ước tính theo hiệu suất lịch sử','History-based estimate'):
    label('歷史樣本不足','Thiếu dữ liệu lịch sử','Insufficient history');
-  const main=required!==null?int(required)+' HC':ideal!==null?int(ideal)+' HC*':'—';
+  const main=required!==null?int(required)+' 人員':ideal!==null?int(ideal)+' 人員*':'—';
   const explanation=!complete?label('須補齊IE人工秒值、正常班OT拆分與型體總數；不將缺值視為0。','Cần đủ IE, OT và đối chiếu tổng mã giày.','IE seconds, OT split and reconciled model totals required.'):
    hist.eff?label('參考效率','Hiệu suất tham chiếu','Reference efficiency')+' '+fmt(hist.eff*100,1)+'% · '+int(hist.samples)+' '+label('個歷史日','ngày lịch sử','historical days'):
-   label('僅提供100%理論下限*；80–90%情境約','Chỉ có mức tối thiểu 100%*; kịch bản 80–90%:','100% theoretical minimum*; 80–90% scenario:')+' '+int(scenarioLow)+'–'+int(scenarioHigh)+' HC';
+   label('僅提供100%理論下限*；80–90%情境約','Chỉ có mức tối thiểu 100%*; kịch bản 80–90%:','100% theoretical minimum*; 80–90% scenario:')+' '+int(scenarioLow)+'–'+int(scenarioHigh)+' 人員';
   const comparison=complete&&actual!==null?
-   label('實際平均HC','HC thực tế TB','Actual average HC')+' '+fmt(actual,1)+
-   (required!==null?' · '+label('與IE推估差','Chênh so với IE','Vs IE estimate')+' '+fmt(actual-required,1)+' HC':'')+
+   label('實際平均人員','人員 thực tế TB','Actual average 人員')+' '+fmt(actual,1)+
+   (required!==null?' · '+label('與IE推估差','Chênh so với IE','Vs IE estimate')+' '+fmt(actual-required,1)+' 人員':'')+
    (capacity!==null?' · '+label('同型體比例線性產能參考','Công suất tham chiếu cùng cơ cấu','Same-mix linear capacity reference')+' '+int(capacity)+' '+label('雙','đôi','pairs'):''):
-   label('尚無可比實際HC','Chưa có HC thực tế hợp lệ','No comparable actual HC');
+   label('尚無可比實際人員','Chưa có 人員 thực tế hợp lệ','No comparable actual 人員');
   const warning=observed!==null&&observed>1?
-   '<p class="ie-flag">'+label('警示：當期IE工作量／HC工時超過100%，請核對IE秒值與人數口徑。','Cảnh báo: tải IE / giờ công >100%; cần kiểm tra.','Warning: observed IE workload exceeds 100% of reported labor hours.')+'</p>':'';
-  summaries.push(`<div class="ie-summary-card"><small>${title} · ${status}</small><b>${main}</b><p>${explanation}</p><p>${comparison}</p>${warning}${missing.length?`<p>${label('缺IE：','Thiếu IE: ','Missing IE: ')}${esc([...new Set(missing)].slice(0,4).join(', '))}</p>`:''}${!reconcile?`<p>${label('型體總數與日報未核對，不能產生合理HC。','Tổng mã giày không khớp báo cáo ngày.','Model totals do not reconcile with daily reports.')}</p>`:''}</div>`);
+   '<p class="ie-flag">'+label('警示：當期IE工作量／人員工時超過100%，請核對IE秒值與人數口徑。','Cảnh báo: tải IE / giờ công >100%; cần kiểm tra.','Warning: observed IE workload exceeds 100% of reported labor hours.')+'</p>':'';
+  summaries.push(`<div class="ie-summary-card"><small>${title} · ${status}</small><b>${main}</b><p>${explanation}</p><p>${comparison}</p>${warning}${missing.length?`<p>${label('缺IE：','Thiếu IE: ','Missing IE: ')}${esc([...new Set(missing)].slice(0,4).join(', '))}</p>`:''}${!reconcile?`<p>${label('型體總數與日報未核對，不能產生合理人員。','Tổng mã giày không khớp báo cáo ngày.','Model totals do not reconcile with daily reports.')}</p>`:''}</div>`);
  }
  summaries.push(`<div class="ie-summary-card"><small>${label('IE人工秒值資料庫','Danh mục giây IE','Manual IE standards')}</small><b>${int(allIE().length)} ${label('筆','bản ghi','records')}</b><p>${int(modelCodes().length)} ${label('種型體','mã giày','models')} · ${int(compare.length)} ${label('個比較生產日','ngày so sánh','comparison days')}</p><p>${label('無需手動填目標效率；至少3個完整歷史日才採用自動參考效率。','Không nhập hiệu suất thủ công; cần ít nhất 3 ngày đủ dữ liệu.','No manual efficiency entry; at least 3 complete history days needed.')}</p></div>`);
  $('ieMixSummary').innerHTML=summaries.join('');
