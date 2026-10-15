@@ -52,7 +52,7 @@ window.FACTORY_EN={
   "modelCautionTitle": "Model productivity caution",
   "modelCaution": "BBB-1698 Pass 1 / Pass 2 is a two-pass process. Current records capture final completed pairs only; dividing one model's output by shared HC does not yield actual process efficiency.",
   "qualityTitle": "Quality & accountable supervisors",
-  "qualitySub": "Displays original PPT issues without double-counting responsibility or automatically adjusting bonuses",
+  "qualitySub": "Displays original PPT issues in their source language. Responsibility is not double-counted and bonuses are not adjusted automatically.",
   "qualityDetail": "Quality issue details",
   "filterArea": "Area",
   "auditTitle": "Data quality & validation",
