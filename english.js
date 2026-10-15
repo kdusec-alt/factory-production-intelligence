@@ -31,6 +31,7 @@ window.FACTORY_EN={
   "compareDesc": "Regular-shift daily output, HC and pairs per person-hour",
   "analysisTitle": "Automatic management insights",
   "analysisDesc": "Data-based observations; root causes are not inferred automatically",
+  "insightScrollHint": "↕ Scroll to read all insights",
   "recentTrend": "Recent daily output",
   "trendCaption": "Regular-shift completed pairs, by day",
   "dailyTrend": "Daily output & anomaly monitoring",
