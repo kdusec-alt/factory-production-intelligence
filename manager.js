@@ -119,7 +119,7 @@
  function exportCsv(){
   if(!rows.length)return;
   const keys=['production_date','plant','process','output_total','normal_output','output_8h_equivalent','manhour_rate','normal_hc','normal_hours','ot_output','ot_hc','ot_hours','operator_name','models','notes','revision','updated_at'];
-  const cell=value=>{let x=String(value??'');if(/^[\\s]*[=+@-]/.test(x))x="'"+x;return '"'+x.replace(/"/g,'""')+'"';};
+  const cell=value=>{let x=String(value??'');if(/^\s*[=+@-]/.test(x))x="'"+x;return '"'+x.replace(/"/g,'""')+'"';};
   const lines=rows.map(r=>keys.map(k=>{
    const value=k==='models'?JSON.stringify(r.models||[]):k==='normal_output'?normal(r):k==='output_8h_equivalent'?equivalent8(r):k==='manhour_rate'?productivity(r):r[k];
    return cell(value);
