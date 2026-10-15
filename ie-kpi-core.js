@@ -49,5 +49,34 @@
       stockfit:calculateProcess({day,models,standards,process:'gc'}),
       assembly:calculateProcess({day,models,standards,process:'asm'})};
   }
-  root.FactoryIEKPI=Object.freeze({standardAt,calculateProcess,calculateDay});
+
+  /* Shared-line allocation: one HC pool, three models, weighted by planned pairs.
+   * This is a labor-content theoretical capacity, not bottleneck/takt validation.
+   * When no independent plan exists, actual mix may be used but must be labelled retrospective.
+   */
+  function sharedLinePlan({date,process,hc,hours=8,models,standards,mixSource='PLANNED'}){
+    if(!['gc','asm'].includes(process)) throw new Error('Invalid process');
+    const headcount=num(hc),shift=num(hours),reasons=[];
+    if(!positive(headcount)||!positive(shift)) reasons.push('MISSING_HC_OR_HOURS');
+    const entries=(models||[]).map(m=>{
+      const weight=num(m.weight??m.plannedPairs);
+      const sec=num(standardAt(standards,m.model,date)?.[process+'Cycle']);
+      if(weight===null||weight<0) reasons.push('MISSING_MODEL_MIX');
+      if(!positive(sec)) reasons.push('MISSING_IE_STANDARD');
+      return {model:modelKey(m.model),weight,manualSecondsPerPair:sec};
+    });
+    if(!entries.length) reasons.push('MISSING_MODEL_MIX');
+    const sum=entries.reduce((a,m)=>a+(positive(m.weight)?m.weight:0),0);
+    if(!positive(sum)) reasons.push('MISSING_MODEL_MIX');
+    if(new Set(entries.map(x=>x.model)).size!==entries.length) reasons.push('DUPLICATE_MODEL');
+    if(reasons.length)return {valid:false,reasons:[...new Set(reasons)],process,date};
+    const weightedSeconds=entries.reduce((a,m)=>a+m.weight/sum*m.manualSecondsPerPair,0);
+    const totalPairs=headcount*shift*3600/weightedSeconds;
+    const details=entries.map(m=>({model:m.model,share:m.weight/sum,
+      ieStandardPairs:totalPairs*m.weight/sum,manualSecondsPerPair:m.manualSecondsPerPair}));
+    return {valid:true,reasons:[],process,date,hc:headcount,hours:shift,
+      ieStandardPairs:totalPairs,weightedManualSeconds:weightedSeconds,
+      mixSource,details,assumption:'100_PERCENT_THEORETICAL_MANUAL_LABOR'};
+  }
+  root.FactoryIEKPI=Object.freeze({standardAt,calculateProcess,calculateDay,sharedLinePlan});
 })(typeof window !== 'undefined' ? window : globalThis);
