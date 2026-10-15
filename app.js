@@ -98,7 +98,7 @@ async function parseCloudExcelFiles(files){
    const keys=new Set(newModels.map(r=>r.date+'|'+r.model));
    newModels.push(...raw.models.filter(r=>!keys.has(r.date+'|'+r.model)));
    if(parsed.names.includes('Quality_Issues')){hasQualitySheet=true;newQuality=parseQuality(parsed.sheets.Quality_Issues||[]);}
-   if(!newDaily.length&&!hasQualitySheet)throw new Error(file.name+': 缺少可辨識的 Master_Daily、Sheet2 或 Quality_Issues');
+   if(!newDaily.length&&!parsed.names.includes('Quality_Issues'))throw new Error(file.name+': 缺少可辨識的 Master_Daily、Sheet2 或 Quality_Issues');
   }else throw new Error(file.name+': 僅支援 .xlsx 或 .csv');
   for(const r of newDaily)daily.set(r.date,r);
   for(const r of newModels)models.set(r.date+'|'+r.model,r);
