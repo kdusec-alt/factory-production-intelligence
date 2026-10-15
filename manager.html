@@ -1,1 +1,26 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'"><title>Factory Intelligence | 團隊雲端產效</title><link rel="stylesheet" href="staff.css"><link rel="stylesheet" href="manager.css"><script src="cloud-config.js" defer></script><script src="manager.js?v=18" defer></script></head><body><main class="shell"><header class="top"><div class="logo">F<span>·</span></div><div class="brand"><strong>NBY · FACTORY INTELLIGENCE</strong><small>MANAGER CLOUD VIEW</small></div><a class="lang" href="./index.html">原分析系統</a></header><section class="hero"><div class="eyebrow">LIVE PRODUCTION DATA</div><h1>團隊雲端產效管理</h1><p>越南幹部填報後，這裡直接顯示已儲存的紀錄。底加與成型分開計算，不將兩道製程產量相加。</p></section><div id="status" class="status pending" role="status"><span class="status-icon">●</span><span id="statusText">正在確認雲端資料…</span></div><section class="panel"><div class="panel-head"><span class="step">01</span><div><h2>選擇比較日期</h2><p>A日與B日產效比較，依NBY底加／成型實際HC與工時計算人時產出。</p></div></div><div class="toolbar"><label>A日（基準）<input type="date" id="dateA"></label><label>B日（比較）<input type="date" id="dateB"></label><button class="secondary" id="reload" type="button">↻ 更新雲端</button><button class="secondary" id="csv" type="button">↓ CSV</button></div><div class="kpis" id="kpis"></div><div class="tablewrap" id="compare"></div></section><section class="panel"><div class="panel-head"><span class="step">02</span><div><h2>NBY每日製程紀錄</h2><p>最新填報、正常班人時產出、OT缺漏及型體明細。</p></div></div><div class="tablewrap" id="records"></div></section><footer>FACTORY PRODUCTION INTELLIGENCE · LIVE CLOUD RECORDS</footer></main></body></html>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+ <title>Factory Intelligence | NBY Cloud Productivity</title>
+ <link rel="stylesheet" href="staff.css"><link rel="stylesheet" href="manager.css">
+ <script src="cloud-config.js" defer></script><script src="manager.js?v=19" defer></script>
+</head>
+<body><main class="shell">
+ <header class="top"><div class="logo">F<span>·</span></div><div class="brand"><strong>NBY · FACTORY INTELLIGENCE</strong><small>MANAGER CLOUD VIEW</small></div>
+ <select id="lang" class="lang" aria-label="Language / 語言 / Ngôn ngữ"><option value="zh">繁體中文</option><option value="en">English</option><option value="vi">Tiếng Việt</option></select>
+ <a class="back-link" href="./index.html" data-t="back">原分析系統</a></header>
+ <section class="hero"><div class="eyebrow">LIVE PRODUCTION DATA</div><h1 data-t="title">NBY雲端產效管理</h1>
+ <p data-t="subtitle">自動分析正常班8H產效、OT狀態及歷史參考。底加與成型獨立計算，不合併成品雙數。</p></section>
+ <div id="status" class="status pending" role="status" aria-live="polite"><span class="status-icon">●</span><span id="statusText" data-t="loading">正在讀取雲端…</span></div>
+ <section class="panel"><div class="panel-head"><span class="step">01</span><div><h2 data-t="compareTitle">日期比較與8H產效</h2><p data-t="compareDesc">正常班8H等效＝（總雙數－OT雙數）÷ 正常班工時 × 8；底加與成型分開比較。</p></div></div>
+ <div class="toolbar"><label><span data-t="dayA">A日（基準）</span><input type="date" id="dateA"></label><label><span data-t="dayB">B日（比較）</span><input type="date" id="dateB"></label><button class="secondary" id="reload" type="button" data-t="reload">↻ 更新雲端</button><button class="secondary" id="csv" type="button" data-t="csv">↓ 匯出 CSV</button></div>
+ <div class="kpis" id="kpis"></div><div class="tablewrap" id="compare"></div>
+ </section>
+ <section class="panel"><div class="panel-head"><span class="step">02</span><div><h2 data-t="insightTitle">自動管理判讀</h2><p data-t="insightDesc">對照所選B日的歷史8H參考值，辨識無OT達成、OT依賴、效率變化與型體差異。僅供管理參考。</p></div></div>
+ <div id="insights" class="insights" aria-live="polite"></div><p class="insight-footnote" data-t="insightNote">歷史參考不是正式IE／SAM標準；樣本不足、OT未確認或型體不同時不作武斷結論。</p>
+ </section>
+ <section class="panel"><div class="panel-head"><span class="step">03</span><div><h2 data-t="recordsTitle">NBY每日製程紀錄</h2><p data-t="recordsDesc">正常班完成雙數、8H等效、人時產出、OT狀態與型體明細。</p></div></div><div class="tablewrap" id="records"></div></section>
+ <footer>FACTORY PRODUCTION INTELLIGENCE · LIVE CLOUD RECORDS</footer>
+</main></body></html>
