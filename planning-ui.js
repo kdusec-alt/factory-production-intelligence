@@ -32,7 +32,7 @@
   if(!a)html+='<p class="ie-plan-warning">'+L('尚無此日正式實績；未補零、未沿用昨天人數。負荷若有顯示，以預定／參考人員計算。','Chưa có thực tế ngày này; không điền 0 hoặc dùng nhân lực ngày trước.','No official actuals for this date; neither zeros nor prior-day members are substituted. Load uses planned/reference members.')+'</p>';
   else if(!a.valid)html+='<p class="ie-plan-warning">'+esc(a.errors.join('；'))+'</p>';
   if(m.plan)html+='<p class="ie-mix-note">'+L('負荷分母：','Mẫu số tải: ','Load denominator: ')+(m.loadUsesActual?L('當日實際出勤','Nhân lực thực tế ngày','Actual daily attendance'):L('預定／參考人員','Dự kiến/tham chiếu','Planned/reference Member'))+' '+fmt(m.availableMembers,0)+' × '+fmt(m.planHours)+'H · '+L('派工標準工時 ','Giờ công kế hoạch ','Dispatch std hours ')+fmt(m.pw.valid?m.pw.seconds/3600:null)+'</p>';
-  else html+='<p class="ie-plan-warning">'+L('尚無此工段當日派工，不能判定派工是否充足。','Chưa có kế hoạch công đoạn, không đánh giá đủ tải.','No process-specific dispatch: adequacy cannot be judged.')+'</p>';
+  else html+='<p class="ie-plan-warning">'+L('沒有已載入且確認的工段當日派工，不能判定派工是否充足。','Chưa có kế hoạch công đoạn, không đánh giá đủ tải.','No process-specific dispatch: adequacy cannot be judged.')+'</p>';
   if(m.pw.errors.some(e=>e!=='NO_PROCESS_PLAN'))html+='<p class="ie-plan-warning">'+esc(m.pw.errors.join('；'))+'</p>';
   return html+detail(m)+'</article>';
  }
@@ -43,7 +43,7 @@
    const n=name(m.p);
    for(const c of P.classify(m)){
     const messages={
-     NO_PROCESS_PLAN:L('已確認：尚無工段當日派工；只有整廠計畫不能判定派工負荷，更不能歸因於員工效率。','Đã xác nhận: chưa có kế hoạch công đoạn; kế hoạch toàn xưởng không đủ để kết luận tải/hiệu suất.','Confirmed: no process dispatch. A factory order plan cannot establish process load or worker performance.'),
+     NO_PROCESS_PLAN:L('資料不足：目前沒有已載入且確認的工段當日派工；只有整廠計畫不能判定派工負荷，更不能歸因於員工效率。','Đã xác nhận: chưa có kế hoạch công đoạn; kế hoạch toàn xưởng không đủ để kết luận tải/hiệu suất.','Confirmed: no process dispatch. A factory order plan cannot establish process load or worker performance.'),
      PLAN_INVALID:L('已確認：派工資料或IE不完整，暫停負荷判定。','Kế hoạch hoặc IE thiếu, chưa đánh giá tải.','Confirmed: incomplete dispatch/IE; load judgment withheld.'),
      LOW_DISPATCH:L('待查：派工負荷低於設定門檻，且各款完成量已接近派工量，有派工不足可能；低IE效率不能全部歸因於現場速度。','Cần xác minh: tải thấp và hoàn thành gần kế hoạch từng mã; có thể thiếu việc, không quy hết cho tốc độ.','Hypothesis: load is below the configured threshold and matched-model completion is near dispatch; under-dispatch is possible, not proven poor execution.'),
      ENOUGH_DISPATCH_LOW_OUTPUT:L('待查：派工負荷充足，但逐款達成及IE效率偏低；請查線平衡、換型、待料、返工與瓶頸，原因尚未證實。','Cần xác minh: đủ tải nhưng hoàn thành/hiệu suất thấp; kiểm tra cân bằng, đổi mã, chờ liệu, sửa và nút thắt.','Hypothesis: sufficient dispatch but low matched completion and IE efficiency. Check balance, changeovers, materials, rework and bottlenecks; no cause is established.'),
