@@ -75,7 +75,7 @@
 
 /* V1.13: keep cloud manager analytics read-only; preserve local IndexedDB untouched. */
 .mode-notice{margin:0 0 14px;padding:11px 14px;border:1px solid #e9d8ac;border-radius:12px;background:#fffaf0;color:#82551a;font-size:13px;line-height:1.55}
-body.cloud-manager #modeNotice,body.cloud-manager [data-view="entry"],body.cloud-manager #view-entry,body.cloud-manager #quickEntry,body.cloud-manager #goEntry,body.cloud-manager #demoBtn,body.cloud-manager #downloadVN,body.cloud-manager #clearBtn,body.cloud-manager label[for="fileInput"]{display:none!important}
+body.cloud-manager #modeNotice,body.cloud-manager [data-view="entry"],body.cloud-manager #view-entry,body.cloud-manager #quickEntry,body.cloud-manager #goEntry,body.cloud-manager #demoBtn,body.cloud-manager #downloadVN,body.cloud-manager #clearBtn{display:none!important}
 body.cloud-manager #cloudTopStatus{background:#e8f6ef;color:#11663b;border-color:#a5d6bd}
 body.cloud-manager #refreshCloud[disabled]{opacity:.55;cursor:wait}
 
