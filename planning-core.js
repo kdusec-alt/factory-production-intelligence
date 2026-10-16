@@ -33,7 +33,7 @@
   const hours=actual?.hours??planHours;
   const plannedCapacity=mixAvg>0?expectedMembers*hours*3600/mixAvg:null,actualCapacity=mixAvg>0&&actualMembers!==null?actualMembers*hours*3600/mixAvg:null;
   const absenceLoss=plannedCapacity!==null&&actualCapacity!==null?Math.max(0,plannedCapacity-actualCapacity):null;
-  const actualExtra=(actual?.rows||[]).some(m=>m.pairs>0&&!pw.rows.some(r=>r.model===m.model&&r.pairs>0));
+  const actualExtra=!!plan&&pw.valid&&(actual?.rows||[]).some(m=>m.pairs>0&&!pw.rows.some(r=>r.model===m.model&&r.pairs>0));
   return {date,p,record,plan,pw,actual,plannedMembers,expectedMembers,referenceMembers,attendanceConfirmed:plannedMembers!==null,actualMembers,availableMembers,planHours,availableSeconds,planLoad,loadUsesActual:actualMembers!==null,dispatchAttainment,matchedAttainment,actualExtra,absence,absenceRate,mixAvg,mixSource,plannedCapacity,actualCapacity,absenceLoss,standardHourGap:actual?.valid&&actual.availableHours!==null?actual.availableHours-actual.earnedHours:null};
  }
  function simulate(p,date,members,hours,mix){

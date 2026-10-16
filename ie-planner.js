@@ -42,7 +42,7 @@
   return card(name+' · '+L('正常班人員','Nhân lực ca chính','Regular-shift Member'),number(s.members,0),number(s.hours,1)+'H')+
    card(name+' · '+L('當日組合IE應產','Sản lượng chuẩn IE','IE target pairs'),number(s.target,1),L('同組合8H應產 ','Chuẩn 8H ','8H target ')+number(s.target8,1))+
    card(name+' · '+L('實際完成','Thực tế','Actual output'),number(s.actual,0),L('差異 ','Chênh lệch ','Gap ')+(s.delta>0?'+':'')+number(s.delta,1)+' '+L('雙','đôi','pairs'))+
-   card(name+' · '+L('效率達成','Đạt hiệu suất','Efficiency attainment'),(s.efficiency===null?'N/A':number(s.efficiency*100,1)+'%'),L('差異率 ','Tỷ lệ chênh ','Variance ')+(s.variance>0?'+':'')+number(s.variance*100,1)+'%');
+   card(name+' · '+L('效率達成','Đạt hiệu suất','Efficiency attainment'),(s.efficiency===null?'N/A':number(s.efficiency*100,1)+'%'),L('差異率 ','Tỷ lệ chênh ','Variance ')+(s.variance>0?'+':'')+(s.variance===null?'N/A':number(s.variance*100,1)+'%'));
  }
  function table(s){
   if(!s.valid)return '<p class="ie-plan-warning">'+esc(s.errors.join('；'))+'</p>';
