@@ -80,18 +80,15 @@
  function settingsUI(){return '<details class="panel management-settings"><summary>'+L('判讀門檻與參考編制（共用雲端設定）','Ngưỡng phân tích và nhân lực tham chiếu','Analysis thresholds & reference staffing (shared cloud settings)')+'</summary><p>'+L('100% IE數學基準不變；以下僅控制管理警示。','Chuẩn IE 100% không đổi; đây là ngưỡng cảnh báo.','The 100% mathematical IE standard is unchanged; these configure management alerts only.')+'</p><div class="management-settings-grid">'+Object.entries(settingsLabels).map(([k,v])=>'<label>'+L(...v)+'<input type="number" min="0" max="'+(k.startsWith('reference')?1000:300)+'" step="any" data-setting="'+k+'" value="'+P.settings[k]+'"'+(readOnly()?' disabled':'')+'></label>').join('')+'</div><button type="button" class="primary" id="savePlanningSettings"'+(readOnly()?' disabled':'')+'>'+L('儲存判讀設定至雲端','Lưu ngưỡng lên đám mây','Save cloud analysis settings')+'</button></details>';}
  function render(){
   const old=by('view-planner');if(!old)return;
-  old.querySelector('.planner-grid')?.classList.add('hidden');old.querySelector(':scope > .note')?.classList.add('hidden');
-  let root=by('managementPlanner');if(!root){root=document.createElement('div');root.id='managementPlanner';old.append(root);root.addEventListener('input',onInput);root.addEventListener('change',onChange);root.addEventListener('click',onClick);}
-  if(!chosen)chosen=periods().compare[0]?.date||new Date().toISOString().slice(0,10);
-  by('plannerPeriod').textContent=L('本頁分析／派工日期：','Ngày phân tích/kế hoạch trang này: ','This page analysis / dispatch date: ')+chosen;
-  // Keep in-progress editor/simulation fields across background cloud refreshes.
+  old.querySelector('.planner-grid')?.classList.remove('hidden');
+  old.querySelector(':scope > .note')?.classList.add('hidden');
+  let root=by('managementPlanner');if(!root){root=document.createElement('div');root.id='managementPlanner';old.append(root);root.addEventListener('input',onInput);root.addEventListener('click',onClick);}
+  chosen=periods().compare[0]?.date||new Date().toISOString().slice(0,10);
   if(dirty&&editorDate===chosen&&root.innerHTML)return;
-  const openEditor=by('dispatchEditor')?.open,openSettings=root.querySelector('.management-settings')?.open;
-  root.innerHTML='<div class="panel management-toolbar"><label>'+L('分析／派工日期','Ngày phân tích / kế hoạch','Analysis / dispatch date')+'<input id="managementDate" type="date" value="'+chosen+'"></label><label>'+L('模式','Chế độ','Mode')+'<select id="managementMode"><option value="actual" '+(mode==='actual'?'selected':'')+'>'+L('原始實績','Thực tế gốc','Original actuals')+'</option><option value="scenario" '+(mode==='scenario'?'selected':'')+'>'+L('情境試算（不寫回）','Mô phỏng (không ghi thực tế)','Scenario (no actual writes)')+'</option></select></label><button type="button" class="outline" id="reloadPlanning">'+L('更新派工雲端','Tải kế hoạch đám mây','Reload cloud planning')+'</button><span id="planningStatus" role="status">'+esc(statusText)+'</span></div><p class="ie-mix-note">'+L('正常班8H，OT獨立排除。工段派工、原始實績、情境試算分開；整廠計畫不自動套到兩工段。','Ca chính 8H, loại OT; tách kế hoạch, thực tế và mô phỏng. Không tự dùng đơn xưởng cho cả hai công đoạn.','Regular shift 8H, OT excluded. Process dispatch, original actuals and scenarios remain separate; factory orders are not duplicated into both processes.')+'</p>'+
-  (P.cache.has(chosen+'|factory')?'<p class="note">'+L('已保存整廠訂單計畫：','Đã lưu đơn toàn xưởng: ','Saved factory order plan: ')+P.cache.get(chosen+'|factory').payload.models.map(m=>esc(m.model)+' '+m.plannedPairs).join(' · ')+L('。仍須確認各工段當日排程。',' Cần xác nhận lịch từng công đoạn.',' Process-specific daily dispatch remains unconfirmed.')+'</p>':'')+
-  ['gc','asm'].map(processCard).join('')+'<article class="panel management-analysis"><div class="panel-head"><h3>'+L('AI管理判讀｜已知事實與待查原因','Phân tích | sự thật và giả thuyết','Management analysis | facts & hypotheses')+'</h3></div>'+managementAnalysis(chosen)+'</article>'+simulations()+editor()+settingsUI();
-  if(openEditor)by('dispatchEditor').open=true;if(openSettings)root.querySelector('.management-settings').open=true;
-  editorDate=chosen;updateSim();if(loaded!==chosen&&!loading)void load();
+  const openSettings=root.querySelector('.management-settings')?.open;
+  root.innerHTML='<p class="ie-mix-note">'+L('依實際生產日、完成型體組合與IE試算。調整人員與工時只影響本頁，不會覆蓋歷史出勤。派工日不等於生產日，因此不以同日派工量判定達成率、效率原因或瓶頸。','Tính theo ngày sản xuất, cơ cấu hoàn thành và IE. Thay người/giờ chỉ mô phỏng, không sửa lịch sử. Ngày giao việc khác ngày sản xuất; không so kế hoạch cùng ngày để kết luận.','Uses the production date, completed model mix and IE. Member/hour edits are local scenarios and never overwrite historical attendance. Dispatch date is not production date: same-day dispatch is not used to judge attainment, efficiency causes or bottlenecks.')+'</p>'+settingsUI()+'<span id="planningStatus" role="status">'+esc(statusText)+'</span>';
+  if(openSettings)root.querySelector('.management-settings').open=true;
+  editorDate=chosen;if(loaded!==chosen&&!loading)void load();
  }
  function updateSim(){for(const p of ['gc','asm']){const s=scenario(p),r=P.simulate(p,chosen,s.members,s.hours,Object.entries(s.mix).map(([model,pairs])=>({model,pairs}))),m=P.metrics(chosen,p),box=by('simResult-'+p);if(box)box.textContent=r.valid?L('情境IE應產 ','Chuẩn IE mô phỏng ','Scenario IE capacity ')+fmt(r.target)+L(' 雙；加權IE ',' đôi; giây IE ',' pairs; weighted IE ')+fmt(r.avg,0)+L('秒。原始完成工作量下的假設IE效率 ',' giây. Hiệu suất giả định với công chuẩn thực tế ','s. Assumed IE efficiency for original earned work ')+pct(m.actual?.valid&&s.members*s.hours>0?m.actual.work/(s.members*s.hours*3600):null)+L('；與原始同組合人員相比的產能差 ',' giây. Chênh so với nhân lực thực tế cùng cơ cấu ','s. Capacity difference vs actual Member with this same mix ')+fmt(m.actualMembers!==null?(s.members-m.actualMembers)*s.hours*3600/r.avg:null)+L(' 雙。只改本頁，不寫回雲端或歷史實績。',' đôi. Không ghi thực tế hoặc đám mây.',' pairs. Page-local only; no cloud or historical writes.'):L('請輸入有效人員、工時及非零型體組合；不假設鞋型比例。','Nhập người, giờ và cơ cấu khác 0; không tự giả định.','Enter valid members, hours and a nonzero mix; no mix is assumed.');}}
  async function load(){
@@ -124,5 +121,10 @@
  const previous=window.renderPlanner;window.renderPlanner=function(){if(previous)previous();render();};
  window.addEventListener('factory:cloud-refreshed',()=>{fresh.clear();loaded='';if(!dirty)void load();});
  P.ensureDate=function(date){if(!window.FactoryCloudDashboard?.enabled||pending.has(date)||(fresh.has(date)&&Date.now()-fresh.get(date)<300000))return;const task=window.FactoryCloudDashboard.loadPlanning(date).then(r=>{P.setRecords(r.records);fresh.set(date,Date.now());window.FactoryIEPlanner.renderTargets();if(date===chosen&&!dirty)render();}).catch(()=>{fresh.set(date,Date.now());}).finally(()=>pending.delete(date));pending.set(date,task);};
- P.render=render;P.renderAnalysis=managementAnalysis;
+ // Dispatch dates are not production dates. Keep saved plans intact, but do not
+ // inject same-date dispatch/actual comparisons into production AI analysis.
+ P.render=render;P.renderAnalysis=()=>'';
+ // app.js captured the legacy renderer when binding these inputs. Route edits
+ // through the current IE renderer, without writing state or cloud actuals.
+ for(const id of ['gcHC','gcHours','asmHC','asmHours'])by(id)?.addEventListener('input',e=>{e.stopImmediatePropagation();window.renderPlanner();},true);
 })();
