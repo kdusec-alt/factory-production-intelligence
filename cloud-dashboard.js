@@ -94,6 +94,7 @@
    const normalized=transform(json.rows,json.excel_days||[]);
    if(typeof window.applyFactoryCloudData!=='function')throw Error('Analysis engine not ready');
    window.applyFactoryCloudData({...normalized,quality:Array.isArray(json.excel_quality?.quality)?json.excel_quality.quality:Array.isArray(json.legacy_quality)?json.legacy_quality:[],ieStandards:[...new Map([...(Array.isArray(json.legacy_ie_standards)?json.legacy_ie_standards:[]),...(Array.isArray(json.ie_standards)?json.ie_standards:[])].map(r=>[String(r.model).trim().toUpperCase()+'|'+(r.effectiveDate||''),r])).values()],latestImport:json.excel_latest||null});
+   window.dispatchEvent(new CustomEvent('factory:cloud-refreshed'));
    lastSuccess=Date.now();
    const time=new Date().toLocaleString(document.documentElement.lang==='en'?'en-US':document.documentElement.lang==='vi'?'vi-VN':'zh-TW');
    feedback('已同步 '+time+' · '+normalized.daily.length+' 個生產日 · IE '+state.ieStandards.length+' 筆'+(json.truncated?' · 超過2000筆，請聯絡管理員':''),'ok');
@@ -241,5 +242,8 @@
   const connect=document.createElement('button');connect.type='button';connect.className='outline';connect.textContent='連線雲端';
   connect.addEventListener('click',()=>{const value=window.prompt('貼上你原有的私人雲端管理／唯讀網址（不會寫入程式或本機資料庫）：');if(!value)return;try{const u=new URL(value);const f=new URLSearchParams(u.hash.slice(1));if(u.origin!==location.origin||u.pathname!==location.pathname&&!u.pathname.endsWith('/index.html')||!(f.get('admin')?.length>=32||f.get('viewer')?.length>=32))throw Error();location.href='./index.html'+u.hash;}catch{window.alert('網址無效，請使用此系統的完整私人網址。');}});notice.append(connect);
  });
- window.FactoryCloudDashboard=Object.freeze({enabled,isAdmin,activate,refresh,importFiles,saveIE,deleteIE,migrateLocalIE});
+ async function loadPlanning(date){return post({action:'planning_read',date},15000);}
+ async function savePlanning(plan,revision){if(!isAdmin)throw Error('只有管理員可儲存派工計畫');return post({action:'planning_save',plan,expected_revision:revision},15000);}
+ async function savePlanningSettings(settings,revision){if(!isAdmin)throw Error('只有管理員可儲存判讀設定');return post({action:'planning_settings_save',settings,expected_revision:revision},15000);}
+ window.FactoryCloudDashboard=Object.freeze({enabled,isAdmin,activate,refresh,importFiles,saveIE,deleteIE,migrateLocalIE,loadPlanning,savePlanning,savePlanningSettings});
 })();

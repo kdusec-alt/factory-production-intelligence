@@ -7,33 +7,34 @@
  const key=x=>String(x||'').trim().toUpperCase();
  const number=(x,d=1)=>Number.isFinite(x)?x.toLocaleString(state.lang==='vn'?'vi-VN':state.lang==='en'?'en-US':'zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
  const standard=(model,date)=>(state.ieStandards||[]).filter(x=>key(x.model)===key(model)&&(!x.effectiveDate||x.effectiveDate<=date)).sort((a,b)=>String(b.effectiveDate||'').localeCompare(String(a.effectiveDate||'')))[0];
+ function applicable(p,model){return !(p==='gc'&&key(model)==='SOB-1632');}
  function calculate(p,day,membersOverride=null,hoursOverride=null,ieDate=null){
-  const members=membersOverride??num(day?.[p+'HC']),hours=hoursOverride??num(day?.[p+'Hours']);
-  const actual=num(day?.[p+'Normal']),date=day?.date;
-  const rows=state.models.filter(m=>m.date===date).map(m=>{
-   const total=num(m[p+'Total']),pairs=num(m[p+'Normal']);
-   return {model:key(m.model),pairs,seconds:num(standard(m.model,ieDate||date)?.[p+'Cycle']),total};
-  }).filter(m=>m.total!==null||m.pairs!==null);
+  const members=membersOverride??num(day?.[p+'HC']),hours=hoursOverride??num(day?.[p+'Hours']),date=day?.date;
+  const sourceActual=num(day?.[p+'Normal']);
+  const allRows=state.models.filter(m=>m.date===date).map(m=>({model:key(m.model),pairs:num(m[p+'Normal']),seconds:num(standard(m.model,ieDate||date)?.[p+'Cycle']),total:num(m[p+'Total'])})).filter(m=>m.total!==null||m.pairs!==null);
+  const rows=allRows.filter(m=>applicable(p,m.model)),excluded=allRows.filter(m=>!applicable(p,m.model));
+  const excludedPairs=excluded.reduce((s,m)=>s+(m.pairs||0),0),allPairs=allRows.reduce((s,m)=>s+(m.pairs||0),0);
+  const actual=sourceActual!==null&&excludedPairs>0&&Math.abs(sourceActual-allPairs)<.001?sourceActual-excludedPairs:sourceActual;
   const errors=[];
-  if(!(members>0))errors.push(L('缺少正常班人員','Thiếu nhân lực ca chính','Regular-shift members missing'));
-  if(!(hours>0))errors.push(L('缺少正常班工時','Thiếu giờ ca chính','Regular-shift hours missing'));
+  if(members===null||members<0)errors.push(L('缺少有效正常班人員','Thiếu nhân lực ca chính','Regular-shift members missing'));
+  if(hours===null||hours<0)errors.push(L('缺少有效正常班工時','Thiếu giờ ca chính','Regular-shift hours missing'));
   if(actual===null||actual<0)errors.push(L('正常班產量／OT拆分待補','Thiếu sản lượng ca chính / OT','Regular output / OT breakdown missing'));
-  if(!rows.length)errors.push(L('缺少型體明細','Thiếu chi tiết mã giày','Model breakdown missing'));
+  if(!rows.length&&actual!==0)errors.push(L('缺少型體明細','Thiếu chi tiết mã giày','Model breakdown missing'));
   if(new Set(rows.map(m=>m.model)).size!==rows.length)errors.push(L('同日型體重複，請核對資料','Trùng mã trong ngày','Duplicate daily model records'));
   const missing=rows.filter(m=>m.pairs===null||m.pairs<0);
   if(missing.length)errors.push(L('型體正常班雙數待補：','Thiếu số đôi ca chính: ','Missing model regular pairs: ')+missing.map(m=>m.model).join(', '));
-  if(!missing.length&&rows.length&&actual!==null&&Math.abs(rows.reduce((s,m)=>s+m.pairs,0)-actual)>.001)errors.push(L('型體合計與日報不符','Tổng mã không khớp báo cáo','Model totals do not reconcile'));
+  if(!missing.length&&actual!==null&&Math.abs(rows.reduce((s,m)=>s+m.pairs,0)-actual)>.001)errors.push(L('型體合計與日報不符','Tổng mã không khớp báo cáo','Model totals do not reconcile'));
   const missingIE=rows.filter(m=>m.pairs>0&&!(m.seconds>0));
   if(missingIE.length)errors.push(L('缺少有效IE秒值：','Thiếu giây IE: ','Missing effective IE seconds: ')+missingIE.map(m=>m.model).join(', '));
-  const work=rows.reduce((s,m)=>s+(m.pairs>0&&m.seconds>0?m.pairs*m.seconds:0),0);
-  if(actual===0)errors.push(L('當日0雙，無型體比例可配比','Ngày 0 đôi, chưa có cơ cấu mã','Zero output: model mix unavailable'));
-  const valid=!errors.length&&work>0;
-  const avg=valid?work/actual:null,target8=valid?members*8*3600/avg:null,target=valid?members*hours*3600/avg:null;
-  const efficiency=valid?actual/target:null,delta=valid?actual-target:null;
-  return {p,date,members,hours,actual,rows,errors,valid,work,earnedHours:valid?work/3600:null,availableHours:members>0&&hours>0?members*hours:null,avg,target8,target,efficiency,delta,variance:valid?delta/target:null,
-   allocations:valid?rows.map(m=>({...m,share:m.pairs/actual,target:m.pairs/actual*target,target8:m.pairs/actual*target8,
-    singleModel8:m.seconds>0?members*8*3600/m.seconds:null})):[]};
+  const work=rows.reduce((s,m)=>s+(m.pairs>0&&m.seconds>0?m.pairs*m.seconds:0),0),valid=!errors.length;
+  const availableHours=members!==null&&hours!==null&&members>=0&&hours>=0?members*hours:null;
+  const hasMix=valid&&actual>0&&work>0,avg=hasMix?work/actual:null;
+  const target8=hasMix&&members!==null?members*8*3600/avg:null,target=hasMix&&availableHours!==null?availableHours*3600/avg:null;
+  const efficiency=valid&&availableHours>0?work/(availableHours*3600):null,delta=valid&&target!==null?actual-target:null;
+  return {p,date,members,hours,sourceActual,actual,rows,excluded,errors,valid,hasMix,work,earnedHours:valid?work/3600:null,availableHours,avg,target8,target,efficiency,delta,variance:valid&&target>0?delta/target:null,
+   allocations:hasMix?rows.map(m=>({...m,share:m.pairs/actual,target:m.pairs/actual*target,target8:m.pairs/actual*target8,singleModel8:m.seconds>0?members*8*3600/m.seconds:null})):[]};
  }
+
  const card=(label,value,foot)=>'<div class="kpi"><div class="label">'+esc(label)+'</div><div class="value">'+esc(value)+'</div><div class="foot">'+esc(foot||'')+'</div></div>';
  function summary(s){
   const name=s.p==='gc'?'Stockfit / GCĐ':'Assembly / TH';
@@ -41,10 +42,11 @@
   return card(name+' · '+L('正常班人員','Nhân lực ca chính','Regular-shift Member'),number(s.members,0),number(s.hours,1)+'H')+
    card(name+' · '+L('當日組合IE應產','Sản lượng chuẩn IE','IE target pairs'),number(s.target,1),L('同組合8H應產 ','Chuẩn 8H ','8H target ')+number(s.target8,1))+
    card(name+' · '+L('實際完成','Thực tế','Actual output'),number(s.actual,0),L('差異 ','Chênh lệch ','Gap ')+(s.delta>0?'+':'')+number(s.delta,1)+' '+L('雙','đôi','pairs'))+
-   card(name+' · '+L('效率達成','Đạt hiệu suất','Efficiency attainment'),number(s.efficiency*100,1)+'%',L('差異率 ','Tỷ lệ chênh ','Variance ')+(s.variance>0?'+':'')+number(s.variance*100,1)+'%');
+   card(name+' · '+L('效率達成','Đạt hiệu suất','Efficiency attainment'),(s.efficiency===null?'N/A':number(s.efficiency*100,1)+'%'),L('差異率 ','Tỷ lệ chênh ','Variance ')+(s.variance>0?'+':'')+number(s.variance*100,1)+'%');
  }
  function table(s){
   if(!s.valid)return '<p class="ie-plan-warning">'+esc(s.errors.join('；'))+'</p>';
+  if(!s.hasMix)return '<p class="ie-mix-note">'+L('當日零產出；有投入人時則效率為0%，無投入人時則為N/A。無實際型體組合，不計算加權應產。','Không có sản lượng: hiệu suất 0% nếu có giờ công; N/A nếu không có giờ công. Không giả định cơ cấu mã.','Zero output: 0% efficiency with positive input hours, otherwise N/A. Weighted capacity is unavailable without a model mix.')+'</p>';
   const th=[L('型體','Mã giày','Model'),L('IE秒／雙','Giây IE/đôi','IE s/pair'),L('當日配比','Tỷ trọng ngày','Daily mix'),L('8H配比應產','Chuẩn phân bổ 8H','Allocated 8H target'),L('正常班配比基準','Chuẩn phân bổ ca chính','Allocated regular target'),L('正常班實際','Thực tế ca chính','Regular actual'),L('配比分攤差異','Chênh lệch phân bổ','Allocated pair gap'),L('完成標準人時','Giờ công chuẩn hoàn thành','Earned standard hours')];
   return '<div class="table-scroll"><table class="data-table"><thead><tr>'+th.map(t=>'<th>'+t+'</th>').join('')+'</tr></thead><tbody>'+s.allocations.map(m=>'<tr><td>'+esc(m.model)+'</td><td>'+number(m.seconds,0)+'</td><td>'+number(m.share*100,1)+'%</td><td>'+number(m.target8,1)+'</td><td>'+number(m.target,1)+'</td><td>'+number(m.pairs,0)+'</td><td>'+number(m.pairs-m.target,1)+'</td><td>'+number(m.pairs>0?m.pairs*m.seconds/3600:0,1)+'</td></tr>').join('')+'<tr class="highlight"><td>'+L('整線合計','Tổng chuyền','Line total')+'</td><td>—</td><td>100%</td><td>'+number(s.target8,1)+'</td><td>'+number(s.target,1)+'</td><td>'+number(s.actual,0)+'</td><td>'+number(s.delta,1)+'</td><td>'+number(s.earnedHours,1)+'</td></tr></tbody></table></div>';
  }
@@ -56,6 +58,7 @@
   document.getElementById('ieCapacityPlanner')?.remove();
   if(compare.length!==1){if(grid)grid.innerHTML=card(L('請選擇單一生產日','Chọn một ngày sản xuất','Select one production day'),'—','');return;}
   const day=compare[0],gc=calculate('gc',day),asm=calculate('asm',day);
+  window.FactoryPlanning?.ensureDate?.(day.date);
   if(grid)grid.innerHTML=summary(gc)+summary(asm);
   const insight=document.getElementById('insights');if(insight&&window.FactoryMixInsight)insight.innerHTML=window.FactoryMixInsight.render(day);
   let panel=document.getElementById('ieOverviewTargets');
@@ -67,7 +70,7 @@
  }
  const oldModels=window.renderIEModels;
  window.renderIEModels=function(){if(typeof oldModels==='function')oldModels();renderTargets();};
- window.FactoryIEPlanner=Object.freeze({calculate,renderTargets});
+ window.FactoryIEPlanner=Object.freeze({calculate,renderTargets,standard,applicable});
  let plannerDate='';
  const oldPlanner=window.renderPlanner;
  window.renderPlanner=function(){
