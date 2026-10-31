@@ -192,6 +192,12 @@
 
  function activate(){
   if(active)return;active=true;
+  Object.assign(translations.zh,{offline:'雲端共用分析',localProcessing:'雲端共用資料',localNote:'Excel 匯入與 IE 儲存會寫入雲端；各裝置共用最新資料。',footer:'雲端共用資料 · 每五分鐘自動更新',entrySub:'管理 IE 標準與人工秒值；儲存後自動同步雲端。'});
+  Object.assign(translations.vn,{offline:'PHÂN TÍCH ĐÁM MÂY',localProcessing:'Dữ liệu đám mây dùng chung',localNote:'Excel nhập và định mức IE được lưu trên đám mây, dùng chung giữa các thiết bị.',footer:'Dữ liệu đám mây dùng chung · Tự cập nhật mỗi 5 phút',entrySub:'Quản lý định mức IE và giây lao động; tự đồng bộ sau khi lưu.'});
+  Object.assign(translations.en,{offline:'CLOUD ANALYTICS',localProcessing:'Shared cloud data',localNote:'Excel imports and IE standards are saved to the cloud and shared across devices.',footer:'Shared cloud data · Automatically refreshes every five minutes',entrySub:'Manage IE standards and labor seconds; changes are saved to the cloud.'});
+  render();
+  if(isAdmin)window.switchEntryTab?.('ie');
+  setView(isAdmin?'entry':'overview');
   document.body.classList.add('cloud-manager');
   if(isViewer)document.body.classList.add('cloud-viewer');
   if(isAdmin){

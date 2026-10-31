@@ -215,4 +215,8 @@ window.applyFactoryCloudData=function(cloud){
  render();setView(wasCloud?previousView:'overview');
 };
 
-bind();render();setView('entry');document.addEventListener('DOMContentLoaded',()=>{void (window.initializeRecordSystem?window.initializeRecordSystem():loadBundled());});
+// Render only after deferred modules have registered translations and IE views.
+document.addEventListener('DOMContentLoaded',()=>{
+ bind();render();setView('entry');
+ void (window.initializeRecordSystem?window.initializeRecordSystem():loadBundled());
+});
