@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Factory Intelligence</title>
+  <desc id="desc">CMYK four production streams converging into one forward flow</desc>
+  <rect width="64" height="64" rx="14" fill="#12223d"/>
+  <path d="M13 17H35L43 27" fill="none" stroke="#00b8d2" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 27H39L45 32" fill="none" stroke="#ee458b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 37H39L45 32" fill="none" stroke="#f5c844" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 47H35L43 37" fill="none" stroke="#eef3fa" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 47H35L43 37" fill="none" stroke="#101820" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M45 32H53M48 27L53 32L48 37" fill="none" stroke="#eef3fa" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
