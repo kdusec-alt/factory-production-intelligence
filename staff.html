@@ -2,18 +2,19 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8">
+  <link rel="icon" type="image/svg+xml" href="factory-logo.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
   <title>Nhập báo cáo sản xuất · Factory Intelligence</title>
-  <link rel="stylesheet" href="staff.css?v=19">
+  <link rel="stylesheet" href="staff.css?v=20">
   <script src="cloud-config.js" defer></script>
   <script src="staff.js?v=19" defer></script>
   <script src="nby-benchmark.js?v=19" defer></script>
 </head>
 <body>
   <main class="shell">
-    <header class="top"><div class="logo">F<span>·</span></div><div class="brand"><strong>FACTORY INTELLIGENCE</strong><small>DAILY PRODUCTION REPORT</small></div><select id="lang" class="lang" aria-label="Language / Ngôn ngữ / 語言"><option value="vi">Tiếng Việt</option><option value="zh">繁體中文</option><option value="en">English</option></select></header>
+    <header class="top"><img class="logo" src="factory-logo.svg" width="42" height="42" alt="Factory Intelligence CMYK logo"><div class="brand"><strong>FACTORY INTELLIGENCE</strong><small>DAILY PRODUCTION REPORT</small></div><select id="lang" class="lang" aria-label="Language / Ngôn ngữ / 語言"><option value="vi">Tiếng Việt</option><option value="zh">繁體中文</option><option value="en">English</option></select></header>
     <section class="hero"><div class="eyebrow" data-t="tag">BÁO CÁO SẢN XUẤT</div><h1 data-t="title">Nhập số liệu hằng ngày</h1><p data-t="subtitle">Chọn công đoạn NBY, nhập sản lượng và nhân lực, sau đó nhấn Lưu. Không cần Excel hay GitHub.</p></section>
     <div id="status" class="status pending" role="status" aria-live="polite"><span class="status-icon">●</span><span id="statusText" data-t="connecting">Đang kiểm tra kết nối…</span></div>
     <form id="reportForm" novalidate>
