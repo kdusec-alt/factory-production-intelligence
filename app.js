@@ -15,6 +15,9 @@ translations.en=Object.assign({},window.FACTORY_EN?.core||{},{staffLink:'🇻�
 Object.assign(translations.zh,{dayComparisonTitle:'兩個生產日的產效對比',dayComparisonSub:'實際8H產出與人時產出；日期、人力及型體組合可能不同'});
 Object.assign(translations.vn,{dayComparisonTitle:'So sánh hiệu suất hai ngày sản xuất',dayComparisonSub:'Sản lượng 8H và năng suất giờ công thực tế; nhân lực và cơ cấu mã có thể khác nhau'});
 Object.assign(translations.en,{dayComparisonTitle:'Two-day productivity comparison',dayComparisonSub:'Actual 8H output and labor-hour productivity; staffing and model mix may differ'});
+Object.assign(translations.zh,{reportExportTitle:'下載區間產效分析',reportExportHint:'使用上方 A 日至 B 日（含首尾）的所有生產日；報告包含實績、IE與歷史配單參考。',reportLanguage:'報告語言',downloadReport:'下載分析報告'});
+Object.assign(translations.vn,{reportExportTitle:'Tải phân tích hiệu suất theo khoảng ngày',reportExportHint:'Dùng toàn bộ ngày sản xuất từ A đến B (bao gồm hai ngày); gồm thực tế, IE và cơ cấu tham khảo.',reportLanguage:'Ngôn ngữ báo cáo',downloadReport:'Tải báo cáo phân tích'});
+Object.assign(translations.en,{reportExportTitle:'Download productivity analysis',reportExportHint:'Uses every production day from A through B, inclusive; includes actuals, IE and historical mix reference.',reportLanguage:'Report language',downloadReport:'Download analysis report'});
 const T=k=>translations[state.lang]?.[k]||translations.zh[k]||k;
 const tr=(zh,vn,en)=>state.lang==='zh'?zh:state.lang==='vn'?vn:(en??window.FACTORY_EN?.translate?.(zh)??zh);
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
