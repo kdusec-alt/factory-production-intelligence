@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="light" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.github.com https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'none'" />
   <title>Factory Production Intelligence | 產效智能管理</title>
-  <link rel="stylesheet" href="styles.css?v=128" />
+  <link rel="stylesheet" href="styles.css?v=129" />
   <script src="data/factory-data.js" defer></script>
   <script src="english.js?v=115" defer></script>
   <script src="insights.js?v=23" defer></script>
@@ -19,6 +19,7 @@
   <script src="planning-ui.js?v=123" defer></script>
   <script src="ie-intelligence.js?v=120" defer></script>
   <script src="mix-recommendation.js?v=126" defer></script>
+  <script src="report-export.js?v=129" defer></script>
   <script src="cloud.js?v=113" defer></script>
   <script src="cloud-config.js" defer></script>
   <script src="cloud-dashboard.js?v=125" defer></script>
@@ -115,6 +116,7 @@
         <div id="view-overview" class="view active">
           <div class="section-head"><div><h2 data-i18n="overviewKpis">關鍵產效指標</h2><p data-i18n="overviewKpisSub">同期間加權比較，不將底加與成型產量相加。</p></div><span id="periodLabel" class="subtle"></span></div>
           <div class="kpi-grid" id="kpiGrid"></div>
+          <section class="panel report-export-bar" aria-label="Production report export"><div><strong data-i18n="reportExportTitle">下載區間產效分析</strong><p data-i18n="reportExportHint">使用上方 A 日至 B 日（含首尾）的所有生產日；報告包含實績、IE與歷史配單參考。</p></div><label><span data-i18n="reportLanguage">報告語言</span><select id="reportLanguage" aria-label="報告語言"><option value="zh">繁體中文</option><option value="en">English</option><option value="vn">Tiếng Việt</option></select></label><button id="downloadReport" class="primary" type="button" data-i18n="downloadReport">下載分析報告</button><small id="reportExportStatus" role="status" aria-live="polite"></small></section>
           <article class="panel day-comparison" aria-live="polite"><div class="panel-head"><div><h3 data-i18n="dayComparisonTitle">兩個生產日的產效對比</h3><p data-i18n="dayComparisonSub">實際8H產出與人時產出；日期、人力及型體組合可能不同</p></div><span class="tag muted">A → B</span></div><div id="dayComparison"></div></article>
           <article id="mixRecommendation" class="panel mix-recommendation" aria-live="polite"></article>
           <div class="two-cols"><article class="panel"><div class="panel-head"><div><h3 data-i18n="compareTitle">A日與B日產效比較</h3><p data-i18n="compareDesc">正常班日均產量、HC及人時產出</p></div><span class="tag">8H</span></div><div id="comparisonTable"></div></article><article class="panel insight-panel"><div class="panel-head"><div><h3 id="insight-panel-heading" data-i18n="analysisTitle">自動管理判讀</h3><p data-i18n="analysisDesc">根據資料計算的觀察重點，不自動推定根因</p></div><div class="insight-panel-meta"><span class="tag muted">AUTO INSIGHT</span><span class="insight-scroll-hint" data-i18n="insightScrollHint">↕ 向下捲動查看完整分析</span></div></div><div id="insights" class="insights" role="region" aria-labelledby="insight-panel-heading" tabindex="0"></div></article></div>
