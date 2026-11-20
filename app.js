@@ -70,7 +70,7 @@ async function readXlsx(buffer){
  const rels=new Map();for(const el of nodes(parseXml(reltext),'Relationship')){const target=el.getAttribute('Target')||'';rels.set(el.getAttribute('Id'),pathNorm(target.startsWith('/')?target.slice(1):'xl/'+target));}
  const allSheets=nodes(parseXml(workbook),'sheet').map(n=>({name:n.getAttribute('name'),rid:n.getAttribute('r:id')||n.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id')}));
  const shared=[];const ss=await zip.text('xl/sharedStrings.xml');if(ss){for(const si of nodes(parseXml(ss),'si'))shared.push(nodes(si,'t').map(x=>x.textContent||'').join(''));}
- const wanted=new Set(['Master_Daily','Model_Data','Quality_Issues','Sheet2']);const result={names:allSheets.map(s=>s.name),sheets:{}};
+ const wanted=new Set(['Master_Daily','Model_Data','Quality_Issues','Sheet2','1+2 Sinhquan 生產排程 ']);const result={names:allSheets.map(s=>s.name),sheets:{}};
  for(const sheet of allSheets){if(!wanted.has(sheet.name))continue;const path=rels.get(sheet.rid);if(!path)continue;const xml=await zip.text(path);if(!xml)continue;const doc=parseXml(xml),rows=[];
   for(const row of nodes(doc,'row')){const out=[];for(const c of Array.from(row.children).filter(n=>n.localName==='c')){const ref=c.getAttribute('r')||'',letters=ref.match(/^[A-Z]+/);if(!letters)continue;const idx=columnIndex(letters[0]);const v=direct(c,'v');const type=c.getAttribute('t');let value=null;if(type==='inlineStr'){const is=direct(c,'is');value=is?nodes(is,'t').map(n=>n.textContent||'').join(''):null;}else if(v){const raw=v.textContent||'';value=type==='s'?shared[Number(raw)]??null:type==='b'?raw==='1':type==='str'||type==='e'?raw:raw===''?null:Number(raw);}out[idx]=value;}rows.push(out);}
   result.sheets[sheet.name]=rows;

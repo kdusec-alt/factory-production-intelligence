@@ -11,7 +11,7 @@
   <script src="data/factory-data.js" defer></script>
   <script src="english.js?v=115" defer></script>
   <script src="insights.js?v=23" defer></script>
-  <script src="app.js?v=129" defer></script>
+  <script src="app.js?v=131" defer></script>
   <script src="records.js?v=117" defer></script>
   <script src="ie.js?v=117" defer></script>
   <script src="ie-planner.js?v=130" defer></script>
@@ -23,6 +23,7 @@
   <script src="cloud.js?v=113" defer></script>
   <script src="cloud-config.js" defer></script>
   <script src="cloud-dashboard.js?v=125" defer></script>
+  <script src="schedule-forecast.js?v=131" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -116,6 +117,7 @@
         <div id="view-overview" class="view active">
           <div class="section-head"><div><h2 data-i18n="overviewKpis">關鍵產效指標</h2><p data-i18n="overviewKpisSub">同期間加權比較，不將底加與成型產量相加。</p></div><span id="periodLabel" class="subtle"></span></div>
           <div class="kpi-grid" id="kpiGrid"></div>
+          <article id="scheduleForecast" class="panel" aria-live="polite"></article>
           <section class="panel report-export-bar" aria-label="Production report export"><div><strong data-i18n="reportExportTitle">下載區間產效分析</strong><p data-i18n="reportExportHint">使用上方 A 日至 B 日（含首尾）的所有生產日；報告包含實績、IE與歷史配單參考。</p></div><label><span data-i18n="reportLanguage">報告語言</span><select id="reportLanguage" aria-label="報告語言"><option value="zh">繁體中文</option><option value="en">English</option><option value="vn">Tiếng Việt</option></select></label><button id="downloadReport" class="primary" type="button" data-i18n="downloadReport">下載分析報告</button><small id="reportExportStatus" role="status" aria-live="polite"></small></section>
           <article class="panel day-comparison" aria-live="polite"><div class="panel-head"><div><h3 data-i18n="dayComparisonTitle">兩個生產日的產效對比</h3><p data-i18n="dayComparisonSub">實際8H產出與人時產出；日期、人力及型體組合可能不同</p></div><span class="tag muted">A → B</span></div><div id="dayComparison"></div></article>
           <article id="mixRecommendation" class="panel mix-recommendation" aria-live="polite"></article>
