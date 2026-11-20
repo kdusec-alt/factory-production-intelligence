@@ -55,7 +55,7 @@
    if(f.size>12*1024*1024)throw Error('File exceeds 12 MB');
    status.textContent=L('正在核對排程…','Đang kiểm tra kế hoạch…','Checking schedule…');
    const parsed=await readXlsx(await f.arrayBuffer()),next=parse(parsed.sheets[SHEET],f.name);
-   localStorage.setItem(STORE,JSON.stringify(next));plan=next;render();
+   localStorage.setItem(STORE,JSON.stringify(next));plan=next;render();window.FactoryMixRecommendation?.render();
   }catch(error){status.textContent=L('匯入失敗：','Lỗi nhập: ','Import failed: ')+error.message;}finally{e.target.value='';}});
   if(!plan){host.querySelector('#scheduleResults').innerHTML='<p class="ie-mix-note">'+L('請匯入生管排程檔，系統只擷取日期、底模、型體、FG料號及每日雙數。','Nhập lịch sản xuất; chỉ lấy ngày, mã, FG và số đôi.','Import the schedule; only dates, models, FG codes and planned pairs are retained.')+'</p>';return;}
   const dates=[...new Set(plan.rows.map(r=>r.date))].sort(),selected=host.dataset.date&&dates.includes(host.dataset.date)?host.dataset.date:dates[0];
@@ -71,8 +71,8 @@
   };
   const select=document.createElement('select');select.setAttribute('aria-label',L('排程日期','Ngày kế hoạch','Schedule date'));for(const d of dates){const o=document.createElement('option');o.value=d;o.textContent=d;select.append(o);}select.value=selected;host.dataset.date=selected;
   const label=document.createElement('label');label.textContent=L('排程日期 ','Ngày kế hoạch ','Schedule date ');label.append(select);out.append(label);const detail=document.createElement('div');out.append(detail);
-  select.addEventListener('change',()=>{host.dataset.date=select.value;draw();});draw();
+  select.addEventListener('change',()=>{host.dataset.date=select.value;draw();window.FactoryMixRecommendation?.render();});draw();
  }
- window.FactorySchedule=Object.freeze({parse,render});
+ window.FactorySchedule=Object.freeze({parse,render,get selected(){return plan?{date:document.getElementById('scheduleForecast')?.dataset.date||plan.rows[0]?.date,rows:plan.rows}:null;}});
  const previous=window.render;window.render=function(){previous();render();};
 })();
